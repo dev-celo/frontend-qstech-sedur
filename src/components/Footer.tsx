@@ -1,17 +1,17 @@
-import { Link } from 'react-router-dom';
-import { Leaf, Mail, Phone, MapPin, Linkedin, Instagram } from 'lucide-react';
+import { Link } from "react-router-dom";
+import {  Mail, Phone, MapPin, Linkedin, Instagram } from "lucide-react";
 
 const footerLinks = {
   navegacao: [
-    { path: '/', label: 'Dashboard' },
-    { path: '/sobre', label: 'Sobre' },
-    { path: '/contato', label: 'Contato' },
-    { path: '/localizacao', label: 'Localização' },
+    { path: "/", label: "Dashboard" },
+    { path: "/sobre", label: "Sobre" },
+    { path: "/contato", label: "Contato" },
+    { path: "/localizacao", label: "Localização" },
   ],
   legal: [
-    { path: '#', label: 'Termos de Uso' },
-    { path: '#', label: 'Política de Privacidade' },
-    { path: '#', label: 'LGPD' },
+    { path: "#", label: "Termos de Uso" },
+    { path: "#", label: "Política de Privacidade" },
+    { path: "#", label: "LGPD" },
   ],
 };
 
@@ -20,10 +20,24 @@ export function Footer() {
     <footer className="bg-gradient-to-br from-[#1e8449] to-[#166534] text-white relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-10">
-        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <svg
+          className="w-full h-full"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+        >
           <defs>
-            <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-              <path d="M 10 0 L 0 0 0 10" fill="none" stroke="white" strokeWidth="0.5"/>
+            <pattern
+              id="grid"
+              width="10"
+              height="10"
+              patternUnits="userSpaceOnUse"
+            >
+              <path
+                d="M 10 0 L 0 0 0 10"
+                fill="none"
+                stroke="white"
+                strokeWidth="0.5"
+              />
             </pattern>
           </defs>
           <rect width="100" height="100" fill="url(#grid)" />
@@ -34,15 +48,16 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* Brand */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="bg-white/20 p-2 rounded-lg">
-                <Leaf className="w-6 h-6 text-white" />
-              </div>
-              <span className="font-semibold text-xl">EcoSedur</span>
-            </div>
+            <Link to="/" className="flex items-center shrink-0">
+              <img
+                src="/logo-qstech-nome-qstech-consultoria&gestao-ambientalverde.png"
+                alt="QSTech Consultoria e Gestão Ambiental"
+                className="h-14 md:h-20 w-auto object-contain"
+              />
+            </Link>
             <p className="text-white/70 text-sm leading-relaxed">
-              Plataforma moderna de gestão e monitoramento de processos ambientais, 
-              integrada com a base de dados da Sedur.
+              Plataforma moderna de gestão e monitoramento de processos
+              ambientais, integrada com a base de dados da Sedur.
             </p>
           </div>
 

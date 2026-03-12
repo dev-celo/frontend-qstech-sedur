@@ -1,10 +1,14 @@
 export interface Processo {
-  protocolo: string;
-  estagio: string;
-  data: string;
-  servico: string;
-  aba: 'andamento' | 'convite' | 'finalizado';
-  extraido_em: string;
+  id: string
+  protocolo: string
+  estagio: string
+  data: string
+  servico: string
+  empresa: string
+  telefone: string
+  cnpj_cpf?: string
+  aba: 'andamento' | 'convite' | 'finalizado'
+  extraido_em: string
 }
 
 export interface Resumo {
