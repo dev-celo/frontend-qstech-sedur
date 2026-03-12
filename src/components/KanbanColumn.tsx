@@ -92,7 +92,7 @@ export function KanbanColumn({ title, count, processos, type, index }: KanbanCol
           </div>
         ) : (
           processos.map((processo, idx) => (
-            <KanbanCard key={processo.protocolo} processo={processo} index={idx} />
+            <KanbanCard key={processo.id} processo={processo} index={idx} />
           ))
         )}
       </div>
