@@ -1,147 +1,97 @@
-import { useRef, useEffect, useState } from 'react';
-import { Clock, Mail, CheckCircle2, Layers } from 'lucide-react';
-import type { Resumo } from '@/types';
+// components/StatsCards.tsx
+import { useRef, useEffect } from 'react';
+import { FileText, Clock, Mail, CheckCircle2 } from 'lucide-react';
 import gsap from 'gsap';
 
 interface StatsCardsProps {
-  resumo: Resumo;
+  resumo: {
+    andamento: number;
+    convite: number;
+    finalizado: number;
+  };
   total: number;
 }
 
-interface StatItem {
-  key: keyof Resumo | 'total';
-  label: string;
-  value: number;
-  icon: React.ElementType;
-  gradient: string;
-  bgGradient: string;
-}
+// Export default direto na função
+export default function StatsCards({ resumo, total }: StatsCardsProps) {
+  const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
 
-export function StatsCards({ resumo, total }: StatsCardsProps) {
-  const cardsRef = useRef<HTMLDivElement>(null);
-  const [animatedValues, setAnimatedValues] = useState({
-    andamento: 0,
-    convite: 0,
-    finalizado: 0,
-    total: 0,
-  });
+  useEffect(() => {
+    cardsRef.current.forEach((card, index) => {
+      if (card) {
+        gsap.fromTo(
+          card,
+          { y: 30, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.5,
+            delay: index * 0.1,
+            ease: 'power3.out',
+          }
+        );
+      }
+    });
+  }, []);
 
-  const stats: StatItem[] = [
+  const stats = [
     {
-      key: 'andamento',
-      label: 'Em Andamento',
+      title: 'Total de Processos',
+      value: total,
+      icon: FileText,
+      color: 'from-purple-500 to-purple-600',
+    },
+    {
+      title: 'Em Andamento',
       value: resumo.andamento,
       icon: Clock,
-      gradient: 'from-blue-500 to-blue-600',
-      bgGradient: 'from-blue-50 to-blue-100',
+      color: 'from-blue-500 to-blue-600',
     },
     {
-      key: 'convite',
-      label: 'Em Convite',
+      title: 'Em Convite',
       value: resumo.convite,
       icon: Mail,
-      gradient: 'from-amber-500 to-amber-600',
-      bgGradient: 'from-amber-50 to-amber-100',
+      color: 'from-amber-500 to-amber-600',
     },
     {
-      key: 'finalizado',
-      label: 'Finalizados',
+      title: 'Finalizados',
       value: resumo.finalizado,
       icon: CheckCircle2,
-      gradient: 'from-green-500 to-green-600',
-      bgGradient: 'from-green-50 to-green-100',
-    },
-    {
-      key: 'total',
-      label: 'Total de Processos',
-      value: total,
-      icon: Layers,
-      gradient: 'from-[#27ae60] to-[#1e8449]',
-      bgGradient: 'from-emerald-50 to-emerald-100',
+      color: 'from-green-500 to-green-600',
     },
   ];
 
-  useEffect(() => {
-    // Animate cards entrance
-    if (cardsRef.current) {
-      const cards = cardsRef.current.querySelectorAll('.stat-card');
-      gsap.fromTo(
-        cards,
-        { rotateX: 45, opacity: 0, y: 30 },
-        {
-          rotateX: 0,
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          stagger: 0.1,
-          ease: 'power3.out',
-          delay: 0.2,
-        }
-      );
-    }
-
-    // Animate numbers
-    const duration = 1500;
-    const startTime = Date.now();
-
-    const animateNumbers = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const easeOut = 1 - Math.pow(1 - progress, 3);
-
-      setAnimatedValues({
-        andamento: Math.round(resumo.andamento * easeOut),
-        convite: Math.round(resumo.convite * easeOut),
-        finalizado: Math.round(resumo.finalizado * easeOut),
-        total: Math.round(total * easeOut),
-      });
-
-      if (progress < 1) {
-        requestAnimationFrame(animateNumbers);
-      }
-    };
-
-    const timer = setTimeout(() => {
-      requestAnimationFrame(animateNumbers);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [resumo, total]);
-
   return (
-    <div ref={cardsRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-      {stats.map((stat) => {
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {stats.map((stat, index) => {
         const Icon = stat.icon;
         return (
           <div
-            key={stat.key}
-            className="stat-card group relative bg-white rounded-2xl p-5 shadow-sm border border-gray-100 
-                       hover:shadow-lg transition-all duration-300 overflow-hidden"
-            style={{ perspective: '1000px', transformStyle: 'preserve-3d' }}
+            key={stat.title}
+            ref={(el) => {
+              cardsRef.current[index] = el;
+            }}
+            className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
           >
-            {/* Background Gradient */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${stat.bgGradient} opacity-0 
-                            group-hover:opacity-100 transition-opacity duration-300`} />
-
-            {/* Content */}
-            <div className="relative">
-              <div className="flex items-start justify-between mb-3">
-                <div className={`p-2.5 rounded-xl bg-gradient-to-br ${stat.gradient} shadow-lg 
-                                group-hover:scale-110 transition-transform duration-300`}>
-                  <Icon className="w-5 h-5 text-white" />
-                </div>
-                <span className={`text-3xl font-bold bg-gradient-to-br ${stat.gradient} 
-                                  bg-clip-text text-transparent`}>
-                  {animatedValues[stat.key]}
-                </span>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-[#7f8c8d] mb-1">{stat.title}</p>
+                <p className="text-3xl font-bold text-[#2c3e50]">{stat.value}</p>
               </div>
-              <p className="text-sm text-[#7f8c8d] font-medium">{stat.label}</p>
+              <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.color} shadow-lg`}>
+                <Icon className="w-6 h-6 text-white" />
+              </div>
             </div>
-
-            {/* Decorative Line */}
-            <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.gradient} 
-                            transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 
-                            origin-left`} />
+            <div className="mt-4">
+              <div className="w-full bg-gray-100 rounded-full h-1.5">
+                <div
+                  className={`h-1.5 rounded-full bg-gradient-to-r ${stat.color}`}
+                  style={{
+                    width: `${total > 0 ? (stat.value / total) * 100 : 0}%`,
+                  }}
+                />
+              </div>
+            </div>
           </div>
         );
       })}
