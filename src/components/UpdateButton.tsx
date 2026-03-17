@@ -6,9 +6,10 @@ import gsap from 'gsap';
 interface UpdateButtonProps {
   lastUpdate: string;
   onUpdate: () => void;
+  loading?: boolean; // Nova prop opcional
 }
 
-export function UpdateButton({ lastUpdate, onUpdate }: UpdateButtonProps) {
+export function UpdateButton({ lastUpdate, onUpdate, loading = false }: UpdateButtonProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -31,12 +32,11 @@ export function UpdateButton({ lastUpdate, onUpdate }: UpdateButtonProps) {
   const handleUpdate = async () => {
     setIsUpdating(true);
     
-    // Simulate the update process
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    // Chama a função de update (agora a lógica de carregamento vem de fora)
+    await onUpdate();
     
     setIsUpdating(false);
     setShowSuccess(true);
-    onUpdate();
     
     // Hide success message after 3 seconds
     setTimeout(() => {
@@ -55,6 +55,9 @@ export function UpdateButton({ lastUpdate, onUpdate }: UpdateButtonProps) {
     });
   };
 
+  // Determina se está em estado de carregamento (prop externa ou interno)
+  const estaCarregando = loading || isUpdating;
+
   return (
     <div className="flex items-center gap-4">
       {/* Last Update Info */}
@@ -70,9 +73,9 @@ export function UpdateButton({ lastUpdate, onUpdate }: UpdateButtonProps) {
         <Button
           ref={buttonRef}
           onClick={handleUpdate}
-          disabled={isUpdating}
+          disabled={estaCarregando}
           className={`relative h-11 px-4 rounded-xl font-medium transition-all duration-300 ${
-            isUpdating
+            estaCarregando
               ? 'bg-[#27ae60]/80 cursor-not-allowed'
               : showSuccess
               ? 'bg-green-500 hover:bg-green-600'
@@ -80,14 +83,14 @@ export function UpdateButton({ lastUpdate, onUpdate }: UpdateButtonProps) {
           } text-white shadow-lg shadow-[#27ae60]/25 hover:shadow-xl hover:shadow-[#27ae60]/30`}
         >
           <div ref={iconRef} className="mr-2">
-            {showSuccess ? (
+            {showSuccess && !estaCarregando ? (
               <Check className="w-4 h-4" />
             ) : (
-              <RefreshCw className={`w-4 h-4 ${isUpdating ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${estaCarregando ? 'animate-spin' : ''}`} />
             )}
           </div>
           <span>
-            {isUpdating
+            {estaCarregando
               ? 'Buscando dados...'
               : showSuccess
               ? 'Atualizado!'
@@ -96,7 +99,7 @@ export function UpdateButton({ lastUpdate, onUpdate }: UpdateButtonProps) {
         </Button>
 
         {/* Success Tooltip */}
-        {showSuccess && (
+        {showSuccess && !estaCarregando && (
           <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-green-500 text-white 
                           text-xs px-3 py-1.5 rounded-lg whitespace-nowrap animate-in fade-in slide-in-from-top-2">
             Dados atualizados com sucesso!
