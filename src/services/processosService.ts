@@ -5,8 +5,11 @@ import { isWithinLastDays, parseBRDate } from "@/utils/date";
 
 const CACHE_KEY = "processos_cache_v2";
 const META_KEY = "processos_meta_v2";
-const CACHE_VERSION = "2.0"; // 🔥 muda isso se alterar regra
+const CACHE_VERSION = "2.0";
 const DIAS_RECENTES = 7;
+
+// 🔥 Variável de debug - mude para false em produção
+const DEBUG = false;
 
 async function getUltimasTramitacoes(
   processoId: string,
@@ -27,14 +30,22 @@ async function getUltimasTramitacoes(
         return (db?.getTime() || 0) - (da?.getTime() || 0);
       })
       .slice(0, limite);
-  } catch {
+  } catch (error) {
+    console.error("Erro ao buscar tramitações:", error);
     return [];
   }
 }
 
 function isDataRecente(dataStr: string): boolean {
   const parsed = parseBRDate(dataStr);
-  return isWithinLastDays(parsed, DIAS_RECENTES);
+  const isRecente = isWithinLastDays(parsed, DIAS_RECENTES);
+  
+  // Log para debug (controlado pela variável DEBUG)
+  if (parsed && DEBUG) {
+    console.log(`🔍 Data: ${dataStr} → ${parsed.toLocaleDateString('pt-BR')} → Recente: ${isRecente}`);
+  }
+  
+  return isRecente;
 }
 
 export async function getProcessos(): Promise<Processo[]> {
@@ -55,7 +66,12 @@ export async function getProcessos(): Promise<Processo[]> {
       parsedMeta.version === CACHE_VERSION
     ) {
       console.log("✅ Cache válido usado");
-      return JSON.parse(cache);
+      const cachedData = JSON.parse(cache) as Processo[];
+      
+      console.log(`📊 Total processos (cache): ${cachedData.length}`);
+      console.log(`📊 Processos recentes (cache): ${cachedData.filter(p => p.isRecente).length}`);
+      
+      return cachedData;
     }
   }
 
@@ -94,7 +110,16 @@ export async function getProcessos(): Promise<Processo[]> {
       return (db?.getTime() || 0) - (da?.getTime() || 0);
     });
 
-  console.log(`📊 Recentes: ${recentes.length}`);
+  console.log(`📊 Total processos (Firestore): ${processos.length}`);
+  console.log(`📊 Processos recentes: ${recentes.length}`);
+  
+  // Debug com a variável DEBUG
+  if (DEBUG) {
+    console.log("📅 Amostra de datas recentes:");
+    recentes.slice(0, 5).forEach(p => {
+      console.log(`   ${p.protocolo}: ${p.ultima_tramitacao?.data || 'sem data'}`);
+    });
+  }
 
   // ✅ SALVA CACHE
   localStorage.setItem(CACHE_KEY, JSON.stringify(recentes));
@@ -112,13 +137,44 @@ export async function getProcessos(): Promise<Processo[]> {
 export function limparCache() {
   localStorage.removeItem(CACHE_KEY);
   localStorage.removeItem(META_KEY);
+  console.log("🧹 Cache limpo manualmente");
 }
 
 export async function getUltimaAtualizacaoReal(): Promise<string> {
   try {
     const metaDoc = await getDoc(doc(db, "metadados", "ultima_extracao"));
-    return metaDoc.data()?.fim_extracao || "";
-  } catch {
+    const data = metaDoc.data();
+    
+    if (data) {
+      // 🔥 CORREÇÃO: Os campos corretos são 'fim' dentro de 'metadados'
+      const fimExtracao = data.metadados?.fim || data.fim || data.timestamp;
+      console.log("📅 Data encontrada no Firestore:", fimExtracao);
+      return fimExtracao || "";
+    }
+    
+    return "";
+  } catch (error) {
+    console.error("Erro ao buscar última atualização:", error);
+    
+    // Fallback para o cache
+    const meta = localStorage.getItem(META_KEY);
+    if (meta) {
+      const parsed = JSON.parse(meta);
+      return parsed.ultima_atualizacao || "";
+    }
+    
     return "";
   }
+}
+
+// Adicione esta função
+export async function forceRefreshProcessos(): Promise<Processo[]> {
+  console.log("🔄 Forçando atualização do cache...");
+  
+  // 🔥 Limpa o cache manualmente
+  localStorage.removeItem(CACHE_KEY);
+  localStorage.removeItem(META_KEY);
+  
+  // 🔥 Busca diretamente do Firestore
+  return await getProcessos();
 }

@@ -1,6 +1,7 @@
 export function parseBRDate(dateStr: string): Date | null {
   if (!dateStr) return null;
 
+  // Pega apenas a data (ignora hora)
   const [datePart] = dateStr.split(" ");
   const partes = datePart.split("/");
 
@@ -11,6 +12,9 @@ export function parseBRDate(dateStr: string): Date | null {
   const ano = Number(partes[2]);
 
   const date = new Date(ano, mes, dia);
+  
+  // 🔥 Adiciona log para debug
+  console.log(`📅 Parse: ${dateStr} → ${date.toLocaleDateString('pt-BR')}`);
 
   return isNaN(date.getTime()) ? null : date;
 }
@@ -19,11 +23,18 @@ export function isWithinLastDays(date: Date | null, days: number): boolean {
   if (!date) return false;
 
   const hoje = new Date();
-  hoje.setHours(23, 59, 59, 999);
+  // 🔥 Remove horas para comparar apenas datas
+  const hojeSemHora = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  
+  const limite = new Date(hojeSemHora);
+  limite.setDate(limite.getDate() - days);
 
-  const limite = new Date();
-  limite.setDate(hoje.getDate() - days);
-  limite.setHours(0, 0, 0, 0);
+  // 🔥 Ajusta a data recebida para meia-noite também
+  const dataSemHora = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
-  return date >= limite && date <= hoje;
+  const isRecente = dataSemHora >= limite && dataSemHora <= hojeSemHora;
+  
+  console.log(`📊 Comparação: ${dataSemHora.toLocaleDateString('pt-BR')} >= ${limite.toLocaleDateString('pt-BR')} = ${isRecente}`);
+
+  return isRecente;
 }
