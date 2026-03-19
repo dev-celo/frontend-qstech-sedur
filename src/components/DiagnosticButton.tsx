@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Activity, Database, RefreshCw, Server, AlertTriangle, Trash2 } from 'lucide-react';
 import { api } from '@/services/api';
 import { forceRefreshProcessos, limparCache as limparCacheService } from '@/services/processosService';
@@ -16,11 +16,24 @@ export function DiagnosticButtons({ onRefreshComplete }: DiagnosticButtonsProps)
   const [loading, setLoading] = useState<string | null>(null);
   const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    carregarSessaoInicial();
+  }, []);
+
+  const carregarSessaoInicial = async () => {
+    try {
+      const info = await api.sessaoStatus();
+      setSessaoInfo(info);
+    } catch (error) {
+      console.error('Erro ao carregar sessão inicial:', error);
+    }
+  };
+
   const checkSessao = async () => {
     setLoading('sessao');
     try {
-      const data = await api.sessaoStatus();
-      setSessaoInfo(data);
+      const info = await api.atualizarStatusSessaoLocal();
+      setSessaoInfo(info);
     } catch (error) {
       console.error('Erro ao verificar sessão:', error);
     }
@@ -49,22 +62,18 @@ export function DiagnosticButtons({ onRefreshComplete }: DiagnosticButtonsProps)
     setLoading(null);
   };
 
-  // 🔥 Nova função: Força refresh dos processos
   const handleForceRefresh = async () => {
     setLoading('refresh');
     setRefreshMessage('Forçando atualização dos dados...');
     
     try {
-      // Limpa cache e força nova busca
       const processos = await forceRefreshProcessos();
       setRefreshMessage(`✅ Cache atualizado! ${processos.length} processos carregados.`);
       
-      // Notifica o dashboard para recarregar
       if (onRefreshComplete) {
         onRefreshComplete();
       }
       
-      // Limpa a mensagem após 3 segundos
       setTimeout(() => setRefreshMessage(null), 3000);
     } catch (error) {
       console.error('Erro ao forçar refresh:', error);
@@ -75,7 +84,6 @@ export function DiagnosticButtons({ onRefreshComplete }: DiagnosticButtonsProps)
     }
   };
 
-  // 🔥 Nova função: Limpa cache (versão melhorada)
   const handleLimparCache = () => {
     limparCacheService();
     setRefreshMessage('🧹 Cache local limpo! Recarregando...');
@@ -116,7 +124,6 @@ export function DiagnosticButtons({ onRefreshComplete }: DiagnosticButtonsProps)
         )}
       </button>
 
-      {/* Mensagem flutuante de refresh */}
       {refreshMessage && (
         <div className="absolute top-full mt-2 left-0 w-64 bg-blue-50 p-2 rounded-lg shadow-lg border border-blue-200 z-50 text-sm">
           {refreshMessage}
@@ -192,6 +199,11 @@ export function DiagnosticButtons({ onRefreshComplete }: DiagnosticButtonsProps)
                     {sessaoInfo.expirada ? '✅' : '❌'}
                   </span>
                 </p>
+                {sessaoInfo.expira_em && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Expira em: {new Date(sessaoInfo.expira_em).toLocaleString('pt-BR')}
+                  </p>
+                )}
               </div>
             )}
 
@@ -226,7 +238,6 @@ export function DiagnosticButtons({ onRefreshComplete }: DiagnosticButtonsProps)
 
             {/* Ações de cache e dados */}
             <div className="border-t pt-2 mt-2 space-y-2">
-              {/* 🔥 NOVO BOTÃO: Forçar Refresh */}
               <button
                 onClick={handleForceRefresh}
                 disabled={loading === 'refresh'}
@@ -240,7 +251,6 @@ export function DiagnosticButtons({ onRefreshComplete }: DiagnosticButtonsProps)
                 Forçar atualização dos dados
               </button>
 
-              {/* Botão de limpar cache melhorado */}
               <button
                 onClick={handleLimparCache}
                 className="w-full text-left p-2 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 text-sm flex items-center gap-2"
@@ -249,7 +259,6 @@ export function DiagnosticButtons({ onRefreshComplete }: DiagnosticButtonsProps)
                 Limpar cache e recarregar
               </button>
               
-              {/* Botão de ver erros */}
               <button
                 onClick={verErros}
                 className="w-full text-left p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-sm flex items-center gap-2"

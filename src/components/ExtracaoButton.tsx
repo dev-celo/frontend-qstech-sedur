@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { 
@@ -33,9 +34,9 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
   const [currentAba, setCurrentAba] = useState<string>('andamento');
   const [showDetails, setShowDetails] = useState(false);
 
-  // ✅ Timer para tempo decorrido (CORRIGIDO)
+  // ✅ Timer para tempo decorrido
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;  // ✅ Tipo correto para navegador
+    let timer: ReturnType<typeof setTimeout>;
     
     if (status === 'processing' && startTime) {
       timer = setInterval(() => {
@@ -57,7 +58,7 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
     };
   }, [status, startTime, progress]);
 
-  // ✅ Polling para verificar progresso (CORRIGIDO)
+  // ✅ Polling para verificar progresso
   useEffect(() => {
     if (status !== 'processing' || !extractionId) return;
 
@@ -88,7 +89,8 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
           return;
         }
 
-        const parciais = await api.dadosParciais(extractionId);
+        // 🔥 Agora o método dadosParciais existe no api!
+        const parciais = await api.dadosParciais(extractionId).catch(() => null);
         if (parciais?.resumo && isMounted) {
           const andamento = parciais.resumo.andamento || 0;
           const convite = parciais.resumo.convite || 0;
@@ -98,7 +100,6 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
           setConviteCount(convite);
           setFinalizadoCount(finalizado);
           
-          // Determina aba atual baseada nos dados
           if (finalizado > 0 && convite > 0 && andamento > 0) {
             setCurrentAba('finalizados');
           } else if (convite > 0 && andamento > 0) {
@@ -112,7 +113,6 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
         const progresso = Math.min(Math.floor((totalAtual / 600) * 100), 95);
         if (isMounted) setProgress(progresso);
         
-        // Atualiza página atual baseada nos contadores
         if (totalAtual > 0) {
           setCurrentPage(Math.floor(totalAtual / 50) + 1);
           setTotalPages(Math.ceil(600 / 50));
@@ -123,7 +123,6 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
       }
     };
 
-    // Inicia o polling
     checkProgress();
     // eslint-disable-next-line prefer-const
     pollingTimer = setInterval(checkProgress, 3000);
@@ -166,7 +165,6 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
       setStatus('cancelled');
       setMessage('Extração cancelada pelo usuário');
       setStartTime(null);
-      // Aqui você poderia chamar uma API para cancelar no backend
     }
   };
 
@@ -209,10 +207,10 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
         </span>
       </button>
 
-      {/* Modal de progresso detalhado */}
+      {/* Modal de progresso */}
       {status === 'processing' && (
         <div className="absolute top-full mt-2 right-0 w-[480px] bg-white p-5 rounded-xl shadow-2xl border border-blue-100 z-50">
-          {/* Cabeçalho */}
+          {/* ... conteúdo do modal (igual ao seu) ... */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-blue-100 rounded-lg">
@@ -235,7 +233,7 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
             </button>
           </div>
 
-          {/* Barra de progresso com percentual */}
+          {/* Barra de progresso */}
           <div className="mb-4">
             <div className="flex justify-between text-xs text-gray-600 mb-1">
               <span>Progresso geral</span>
@@ -243,11 +241,9 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3">
               <div 
-                className="bg-blue-600 h-3 rounded-full transition-all duration-500 relative overflow-hidden"
+                className="bg-blue-600 h-3 rounded-full transition-all duration-500"
                 style={{ width: `${progress}%` }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
-              </div>
+              />
             </div>
           </div>
 
@@ -273,7 +269,7 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
             </div>
           </div>
 
-          {/* Contadores em tempo real */}
+          {/* Contadores */}
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
               <p className="text-xs text-blue-600 mb-1 flex items-center gap-1">
@@ -298,44 +294,7 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
             </div>
           </div>
 
-          {/* Detalhes da extração (expansível) */}
-          <div className="border-t pt-3">
-            <button
-              onClick={() => setShowDetails(!showDetails)}
-              className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 mb-2"
-            >
-              <span>{showDetails ? '▼' : '▶'}</span>
-              {showDetails ? 'Ocultar detalhes' : 'Ver detalhes'}
-            </button>
-            
-            {showDetails && (
-              <div className="bg-gray-50 p-3 rounded-lg text-xs space-y-2">
-                <p className="flex justify-between">
-                  <span className="text-gray-500">Aba atual:</span>
-                  <span className="font-medium text-gray-700">
-                    {currentAba === 'andamento' ? 'Em Andamento' : 
-                     currentAba === 'convite' ? 'Em Convite' : 'Finalizados'}
-                  </span>
-                </p>
-                <p className="flex justify-between">
-                  <span className="text-gray-500">Processos por página:</span>
-                  <span className="font-medium text-gray-700">50</span>
-                </p>
-                <p className="flex justify-between">
-                  <span className="text-gray-500">Total estimado:</span>
-                  <span className="font-medium text-gray-700">600 processos</span>
-                </p>
-                <p className="flex justify-between">
-                  <span className="text-gray-500">Última atualização:</span>
-                  <span className="font-medium text-gray-700">
-                    {new Date().toLocaleTimeString('pt-BR')}
-                  </span>
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Status da extração */}
+          {/* Status */}
           <p className="text-xs text-gray-400 text-center mt-3 flex items-center justify-center gap-1">
             <Clock className="w-3 h-3" />
             {message}
