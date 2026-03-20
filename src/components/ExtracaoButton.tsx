@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { 
@@ -31,8 +30,7 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
   const [eta, setEta] = useState<string>('calculando...');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [currentAba, setCurrentAba] = useState<string>('andamento');
-  const [showDetails, setShowDetails] = useState(false);
+  // 🔥 REMOVIDO: currentAba e showDetails (não estão sendo usados no JSX)
 
   // ✅ Timer para tempo decorrido
   useEffect(() => {
@@ -100,13 +98,14 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
           setConviteCount(convite);
           setFinalizadoCount(finalizado);
           
-          if (finalizado > 0 && convite > 0 && andamento > 0) {
-            setCurrentAba('finalizados');
-          } else if (convite > 0 && andamento > 0) {
-            setCurrentAba('convite');
-          } else if (andamento > 0) {
-            setCurrentAba('andamento');
-          }
+          // 🔥 Atualiza aba atual baseada nos dados (usado internamente)
+          // if (finalizado > 0 && convite > 0 && andamento > 0) {
+          //   setCurrentAba('finalizados');
+          // } else if (convite > 0 && andamento > 0) {
+          //   setCurrentAba('convite');
+          // } else if (andamento > 0) {
+          //   setCurrentAba('andamento');
+          // }
         }
 
         const totalAtual = andamentoCount + conviteCount + finalizadoCount;
@@ -146,7 +145,6 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
     setEta('calculando...');
     setCurrentPage(1);
     setTotalPages(1);
-    setCurrentAba('andamento');
     
     try {
       const response = await api.iniciarExtracao(true);
@@ -210,7 +208,6 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
       {/* Modal de progresso */}
       {status === 'processing' && (
         <div className="absolute top-full mt-2 right-0 w-[480px] bg-white p-5 rounded-xl shadow-2xl border border-blue-100 z-50">
-          {/* ... conteúdo do modal (igual ao seu) ... */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-blue-100 rounded-lg">
@@ -233,7 +230,6 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
             </button>
           </div>
 
-          {/* Barra de progresso */}
           <div className="mb-4">
             <div className="flex justify-between text-xs text-gray-600 mb-1">
               <span>Progresso geral</span>
@@ -247,7 +243,6 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
             </div>
           </div>
 
-          {/* Informações de tempo */}
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="bg-gray-50 p-2 rounded-lg text-center">
               <p className="text-xs text-gray-500">Tempo decorrido</p>
@@ -269,7 +264,6 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
             </div>
           </div>
 
-          {/* Contadores */}
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
               <p className="text-xs text-blue-600 mb-1 flex items-center gap-1">
@@ -294,7 +288,6 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
             </div>
           </div>
 
-          {/* Status */}
           <p className="text-xs text-gray-400 text-center mt-3 flex items-center justify-center gap-1">
             <Clock className="w-3 h-3" />
             {message}
@@ -302,7 +295,6 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
         </div>
       )}
 
-      {/* Sucesso */}
       {status === 'completed' && (
         <div className="absolute top-full mt-2 right-0 w-96 bg-green-50 p-4 rounded-lg shadow-lg border border-green-200 z-50">
           <div className="flex items-center gap-3">
@@ -322,7 +314,6 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
         </div>
       )}
 
-      {/* Erro */}
       {(status === 'failed' || status === 'cancelled') && (
         <div className="absolute top-full mt-2 right-0 w-96 bg-red-50 p-4 rounded-lg shadow-lg border border-red-200 z-50">
           <div className="flex items-center gap-3">
