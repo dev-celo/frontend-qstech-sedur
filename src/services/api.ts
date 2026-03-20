@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */ 
 const API_URL = (import.meta.env.VITE_API_URL || 'https://backend-qstech-sedur.onrender.com').replace(/\/$/, '');
 const API_URL_LOCAL = (import.meta.env.VITE_API_URL_LOCAL || 'http://localhost:3001').replace(/\/$/, '');
 
