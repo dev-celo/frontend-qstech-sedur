@@ -30,9 +30,9 @@ export interface SessaoInfo {
 
 class ApiClient {
   private extractionId: string | null = null;
-  private messageTimeout: ReturnType<typeof setTimeout> | null = null;
   private sessaoInfo: SessaoInfo | null = null;
 
+  
   constructor() {
     this.carregarSessaoStorage();
   }
