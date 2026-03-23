@@ -1,33 +1,16 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import type { Processo } from "@/types";
 import { isWithinLastDays, parseBRDate } from "@/utils/date";
 
-const CACHE_KEY = "processos_cache_v2";
-const META_KEY = "processos_meta_v2";
+const CACHE_KEY = "processos_completo_v3";
+const META_KEY = "processos_meta_v3";
 const CACHE_VERSION = "3.0";
 const DIAS_RECENTES = 7;
 
-// 🔥 Interface para o documento resumo
-interface ResumoDocumento {
-  ultima_atualizacao: string;
-  total: number;
-  processos: Array<{
-    id: string;
-    protocolo: string;
-    estagio: string;
-    data: string;
-    servico: string;
-    empresa: string;
-    telefone: string;
-    cnpj_cpf: string;
-    aba: string;
-    extraido_em: string;
-    ultima_tramitacao_data?: string;
-    ultima_tramitacao_estagio?: string;
-    ultima_tramitacao_destino?: string;
-  }>;
-}
+// 🔥 Flag para controlar se já carregou do Firestore nesta sessão
+let cacheCarregado = false;
 
 function isDataRecente(dataStr: string): boolean {
   const parsed = parseBRDate(dataStr);
@@ -35,17 +18,41 @@ function isDataRecente(dataStr: string): boolean {
 }
 
 /**
- * 🔥 VERSÃO DEFINITIVA: APENAS 1 LEITURA!
- * Busca o documento resumo que contém todos os dados já processados
+ * 🔥 NOVA ABORDAGEM: Carrega UMA VEZ e guarda no localStorage
+ * Todos os filtros e buscas serão feitos localmente
  */
-export async function getProcessos(): Promise<Processo[]> {
-  console.log("🚀 Buscando processos (modo otimizado - 1 leitura)...");
+export async function getProcessos(forceRefresh = false): Promise<Processo[]> {
+  console.log("🚀 Buscando processos...");
 
+  // 🔥 Se já carregou nesta sessão e não for refresh, usa cache
+  if (!forceRefresh && cacheCarregado) {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      console.log("📦 Usando cache em memória (0 leituras!)");
+      return JSON.parse(cached);
+    }
+  }
+
+  // 🔥 Tenta cache do localStorage
   const cache = localStorage.getItem(CACHE_KEY);
   const meta = localStorage.getItem(META_KEY);
 
+  if (!forceRefresh && cache && meta) {
+    const parsedMeta = JSON.parse(meta);
+    const resumoDoc = await getDoc(doc(db, "resumo", "dashboard"));
+    const resumoData = resumoDoc.data();
+    
+    if (resumoData && parsedMeta.ultima_atualizacao === resumoData.ultima_atualizacao) {
+      console.log("✅ Cache válido - 0 leituras!");
+      cacheCarregado = true;
+      return JSON.parse(cache);
+    }
+  }
+
+  // 🔥 Só chega aqui se precisar atualizar (1 leitura!)
+  console.log("📦 Buscando documento resumo (1 leitura)...");
+  
   try {
-    // 🔥 ÚNICA LEITURA NO FIRESTORE
     const resumoDoc = await getDoc(doc(db, "resumo", "dashboard"));
     
     if (!resumoDoc.exists()) {
@@ -53,19 +60,10 @@ export async function getProcessos(): Promise<Processo[]> {
       return [];
     }
     
-    const resumoData = resumoDoc.data() as ResumoDocumento;
+    const resumoData = resumoDoc.data() as any;
     
-    // Verifica cache local
-    if (cache && meta) {
-      const parsedMeta = JSON.parse(meta);
-      if (parsedMeta.ultima_atualizacao === resumoData.ultima_atualizacao) {
-        console.log("✅ Cache local válido");
-        return JSON.parse(cache);
-      }
-    }
-    
-    // 🔥 Processa os dados do resumo com tipagem correta
-    const processos: Processo[] = resumoData.processos.map((p) => ({
+    // Processa os dados
+    const processos: Processo[] = (resumoData.processos || []).map((p: any) => ({
       id: p.id,
       protocolo: p.protocolo,
       estagio: p.estagio,
@@ -84,16 +82,20 @@ export async function getProcessos(): Promise<Processo[]> {
       isRecente: isDataRecente(p.ultima_tramitacao_data || p.data),
     }));
     
-    const recentes = processos.filter(p => p.isRecente);
-    
-    console.log(`📊 Total: ${processos.length} | Recentes: ${recentes.length} (1 leitura!)`);
-    
-    // Salva cache
-    localStorage.setItem(CACHE_KEY, JSON.stringify(recentes));
+    // 🔥 Salva TUDO no localStorage (não apenas os recentes)
+    localStorage.setItem(CACHE_KEY, JSON.stringify(processos));
     localStorage.setItem(META_KEY, JSON.stringify({
       ultima_atualizacao: resumoData.ultima_atualizacao,
       version: CACHE_VERSION
     }));
+    
+    cacheCarregado = true;
+    
+    console.log(`📊 ${processos.length} processos carregados (1 leitura!)`);
+    
+    // 🔥 Filtra os recentes para exibição (mas mantém todos no cache)
+    const recentes = processos.filter(p => p.isRecente);
+    console.log(`📊 Recentes: ${recentes.length} | Total no cache: ${processos.length}`);
     
     return recentes;
     
@@ -104,13 +106,23 @@ export async function getProcessos(): Promise<Processo[]> {
 }
 
 /**
+ * 🔥 Busca TODOS os processos do cache (para filtros locais)
+ */
+export function getTodosProcessosCache(): Processo[] {
+  const cache = localStorage.getItem(CACHE_KEY);
+  if (cache) {
+    return JSON.parse(cache);
+  }
+  return [];
+}
+
+/**
  * 🔥 Busca apenas a última atualização
  */
 export async function getUltimaAtualizacaoReal(): Promise<string> {
   try {
     const resumoDoc = await getDoc(doc(db, "resumo", "dashboard"));
-    const data = resumoDoc.data() as ResumoDocumento | undefined;
-    return data?.ultima_atualizacao || "";
+    return resumoDoc.data()?.ultima_atualizacao || "";
   } catch (error) {
     console.error("Erro ao buscar última atualização:", error);
     return "";
@@ -118,16 +130,18 @@ export async function getUltimaAtualizacaoReal(): Promise<string> {
 }
 
 /**
- * 🔥 Força recarga (limpa cache)
+ * 🔥 Força recarga (limpa cache e busca novo)
  */
 export async function forceRefreshProcessos(): Promise<Processo[]> {
   console.log("🔄 Forçando atualização do cache...");
+  cacheCarregado = false;
   localStorage.removeItem(CACHE_KEY);
   localStorage.removeItem(META_KEY);
-  return await getProcessos();
+  return await getProcessos(true);
 }
 
 export function limparCache() {
+  cacheCarregado = false;
   localStorage.removeItem(CACHE_KEY);
   localStorage.removeItem(META_KEY);
   console.log("🧹 Cache limpo");

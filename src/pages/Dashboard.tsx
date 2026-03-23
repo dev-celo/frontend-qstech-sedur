@@ -8,7 +8,7 @@ import { ExtracaoButton } from "@/components/ExtracaoButton";
 import { FirestoreButton } from "@/components/FirestoreButton";
 import { DiagnosticButtons } from "@/components/DiagnosticButton";
 import { HeroDashboard } from "@/components/HeroDashboard";
-import { getProcessos, getUltimaAtualizacaoReal } from "@/services/processosService";
+import { getProcessos, getUltimaAtualizacaoReal, getTodosProcessosCache, limparCache } from "@/services/processosService";
 import type { FilterState, Processo } from "@/types";
 
 // Função para formatar data ISO para padrão brasileiro
@@ -21,21 +21,46 @@ function formatarDataBR(dataISO: string): string {
       month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
+      minute: '2-digit'
     });
   } catch {
     return dataISO;
   }
 }
 
+/**
+ * 🔥 Função auxiliar para ordenar processos pela data da última tramitação
+ */
+function ordenarPorUltimaTramitacao(processos: Processo[]): Processo[] {
+  return [...processos].sort((a, b) => {
+    const dataA = a.ultima_tramitacao?.data || a.data;
+    const dataB = b.ultima_tramitacao?.data || b.data;
+    
+    const getTimestamp = (dataStr: string): number => {
+      if (!dataStr) return 0;
+      const partes = dataStr.split(' ')[0].split('/');
+      if (partes.length === 3) {
+        return new Date(
+          parseInt(partes[2]), 
+          parseInt(partes[1]) - 1, 
+          parseInt(partes[0])
+        ).getTime();
+      }
+      return 0;
+    };
+    
+    return getTimestamp(dataB) - getTimestamp(dataA);
+  });
+}
+
 export function Dashboard() {
   const [processos, setProcessos] = useState<Processo[]>([]);
+  const [todosProcessosCache, setTodosProcessosCache] = useState<Processo[]>([]);
   const [lastUpdate, setLastUpdate] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [extractionId, setExtractionId] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [refreshKey, setRefreshKey] = useState<number>(0);
   const [cacheInfo, setCacheInfo] = useState<{ ativo: boolean; data: string | null }>({
     ativo: false,
     data: null
@@ -51,15 +76,15 @@ export function Dashboard() {
   const carregarProcessos = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
     try {
-      const [data, atualizacao] = await Promise.all([
-        getProcessos(),
-        getUltimaAtualizacaoReal(),
-      ]);
-
-      setProcessos(data);
+      const data = await getProcessos();
+      const todos = getTodosProcessosCache();
       
-      // Verifica se está usando cache
-      const meta = localStorage.getItem('processos_meta_v2');
+      setTodosProcessosCache(todos);
+      setProcessos(ordenarPorUltimaTramitacao(data));
+      
+      const atualizacao = await getUltimaAtualizacaoReal();
+      
+      const meta = localStorage.getItem('processos_meta_v3');
       if (meta) {
         const parsed = JSON.parse(meta);
         setCacheInfo({
@@ -70,72 +95,51 @@ export function Dashboard() {
         setCacheInfo({ ativo: false, data: null });
       }
       
-      // Formata a data para exibição
       if (atualizacao) {
         setLastUpdate(formatarDataBR(atualizacao));
-      } else {
-        // Se não tiver data do Firestore, tenta do meta do cache
-        const meta = localStorage.getItem('processos_meta_v2');
-        if (meta) {
-          const parsed = JSON.parse(meta);
-          if (parsed.ultima_atualizacao) {
-            setLastUpdate(formatarDataBR(parsed.ultima_atualizacao));
-          }
-        }
+      } else if (cacheInfo.data) {
+        setLastUpdate(cacheInfo.data);
       }
       
       console.log("📅 Última atualização:", atualizacao);
+      console.log("📊 Processos carregados:", data.length);
+      console.log("📊 Todos no cache:", todos.length);
+      
     } catch (error) {
       console.error("Erro ao carregar processos:", error);
     } finally {
       if (showLoading) setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [cacheInfo.data]);
 
   useEffect(() => {
     carregarProcessos();
   }, [refreshKey, carregarProcessos]);
 
-  // Handler para refresh manual (chamado pelo DiagnosticButtons)
   const handleManualRefresh = useCallback(async () => {
     setRefreshing(true);
     await carregarProcessos(true);
   }, [carregarProcessos]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleExtracaoCompleta = (dados: any, id: string) => {
+  const handleExtracaoCompleta = (_dados: unknown, id: string) => {
     setExtractionId(id);
-    
-    // Salva a data atual no cache
     const agora = new Date().toISOString();
-    
-    localStorage.setItem("processos_cache_v2", JSON.stringify(dados.processos));
-    localStorage.setItem(
-      "processos_meta_v2",
-      JSON.stringify({
-        ultima_atualizacao: agora,
-        version: "2.0",
-      })
-    );
-    
-    // Atualiza o lastUpdate imediatamente
+    limparCache();
     setLastUpdate(formatarDataBR(agora));
-    setCacheInfo({
-      ativo: true,
-      data: formatarDataBR(agora)
-    });
-    
+    setCacheInfo({ ativo: false, data: null });
     carregarProcessos(false);
   };
 
   const handleFirestoreSuccess = () => {
-    // Recarrega para pegar a data do Firestore
     setRefreshKey(prev => prev + 1);
   };
 
+  // 🔥 Filtros usando o cache completo (sem novas leituras!)
   const filteredProcessos = useMemo(() => {
-    return processos.filter((p) => {
+    const source = todosProcessosCache.length > 0 ? todosProcessosCache : processos;
+    
+    let resultado = source.filter((p) => {
       if (filters.search) {
         const s = filters.search.toLowerCase();
         return (
@@ -146,7 +150,40 @@ export function Dashboard() {
       }
       return true;
     });
-  }, [processos, filters]);
+    
+    if (filters.status) {
+      resultado = resultado.filter(p => p.estagio === filters.status);
+    }
+    
+    if (filters.dateFrom) {
+      const fromDate = new Date(filters.dateFrom);
+      resultado = resultado.filter(p => {
+        const dataP = p.ultima_tramitacao?.data || p.data;
+        const partes = dataP.split(' ')[0].split('/');
+        if (partes.length === 3) {
+          const dataObj = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
+          return dataObj >= fromDate;
+        }
+        return true;
+      });
+    }
+    
+    if (filters.dateTo) {
+      const toDate = new Date(filters.dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      resultado = resultado.filter(p => {
+        const dataP = p.ultima_tramitacao?.data || p.data;
+        const partes = dataP.split(' ')[0].split('/');
+        if (partes.length === 3) {
+          const dataObj = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
+          return dataObj <= toDate;
+        }
+        return true;
+      });
+    }
+    
+    return ordenarPorUltimaTramitacao(resultado);
+  }, [todosProcessosCache, processos, filters]);
 
   const { andamento, convite, finalizados } = useMemo(() => {
     const r = {
@@ -176,7 +213,6 @@ export function Dashboard() {
         
         <HeroDashboard />
 
-        {/* Header com última atualização */}
         <div className="flex flex-wrap justify-between items-center gap-3 mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
           <div className="flex items-center gap-3">
             <div className={`w-2 h-2 rounded-full animate-pulse ${
@@ -216,7 +252,7 @@ export function Dashboard() {
           </div>
         </div>
 
-        <StatsCards resumo={resumo} total={processos.length} />
+        <StatsCards resumo={resumo} total={filteredProcessos.length} />
 
         <FilterBar
           filters={filters}
@@ -247,30 +283,30 @@ export function Dashboard() {
               <KanbanColumn
                 title="Em Andamento"
                 count={andamento.length}
-                processos={andamento}
+                processos={ordenarPorUltimaTramitacao(andamento)}
                 type="andamento"
                 index={0}
               />
               <KanbanColumn
                 title="Em Convite"
                 count={convite.length}
-                processos={convite}
+                processos={ordenarPorUltimaTramitacao(convite)}
                 type="convite"
                 index={1}
               />
               <KanbanColumn
                 title="Finalizados"
                 count={finalizados.length}
-                processos={finalizados}
+                processos={ordenarPorUltimaTramitacao(finalizados)}
                 type="finalizado"
                 index={2}
               />
             </div>
 
-            {/* Rodapé com estatísticas */}
             <div className="mt-6 text-center text-xs text-gray-400 bg-white p-3 rounded-lg shadow-sm">
               <p>
-                📊 Total: {processos.length} processos • 
+                📊 Total no cache: {todosProcessosCache.length} processos • 
+                Exibindo: {filteredProcessos.length} • 
                 Andamento: {resumo.andamento} • 
                 Convite: {resumo.convite} • 
                 Finalizados: {resumo.finalizado}
@@ -282,7 +318,7 @@ export function Dashboard() {
               )}
               {cacheInfo.ativo && cacheInfo.data && (
                 <p className="text-blue-500 mt-1 text-[10px]">
-                  💾 Cache: {cacheInfo.data}
+                  💾 Cache: {cacheInfo.data} • 0 leituras no Firestore
                 </p>
               )}
             </div>
