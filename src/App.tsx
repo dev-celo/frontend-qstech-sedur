@@ -5,7 +5,7 @@ import { Dashboard } from '@/pages/Dashboard';
 import { Sobre } from '@/pages/Sobre';
 import { Contato } from '@/pages/Contato';
 import { Localizacao } from '@/pages/Localizacao';
-import Manutencao from './pages/Manutencao';
+// import Manutencao from './pages/Manutencao';
 
 function App() {
   return (
@@ -18,7 +18,7 @@ function App() {
             <Route path="/sobre" element={<Sobre />} />
             <Route path="/contato" element={<Contato />} />
             <Route path="/localizacao" element={<Localizacao />} />
-            <Route path="/manutencao" element={<Manutencao />} />
+            {/* <Route path="/manutencao" element={<Manutencao />} /> */}
           </Routes>
         </main>
         <Footer />
