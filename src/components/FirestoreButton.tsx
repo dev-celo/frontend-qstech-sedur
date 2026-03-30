@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
 import { Database, Loader2, CheckCircle } from 'lucide-react';
+import { api } from '@/services/api';
 
 interface FirestoreButtonProps {
-  extractionId: string;
   onSuccess?: () => void;
 }
 
@@ -13,39 +13,28 @@ export function FirestoreButton({ onSuccess }: FirestoreButtonProps) {
   const [message, setMessage] = useState('');
 
   const handleSalvar = async () => {
-    setLoading(true);
-    setStatus('saving');
-    setMessage('Criando resumo...');
+  setLoading(true);
+  setStatus('saving');
+  setMessage('Criando resumo...');
 
-    try {
-      const response = await fetch('/api/criar-resumo', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+  try {
+    await api.criarResumo();
 
-      const data = await response.json();
+    setStatus('success');
+    setMessage('Resumo criado com sucesso!');
+    onSuccess?.();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao criar resumo');
-      }
+    setTimeout(() => setStatus('idle'), 3000);
 
-      setStatus('success');
-      setMessage('Resumo criado com sucesso!');
-      onSuccess?.();
+  } catch (err: any) {
+    setStatus('error');
+    setMessage(err.message || 'Erro inesperado');
 
-      setTimeout(() => setStatus('idle'), 3000);
-
-    } catch (err: any) {
-      setStatus('error');
-      setMessage(err.message || 'Erro inesperado');
-
-      setTimeout(() => setStatus('idle'), 3000);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setTimeout(() => setStatus('idle'), 3000);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="relative">

@@ -191,6 +191,30 @@ class ApiClient {
     const response = await fetch(url);
     return response.json();
   }
+
+  async criarResumo() {
+  const url = buildUrl(API_URL_LOCAL, 'api/criar-resumo');
+  console.log('📊 Criando resumo em:', url);
+
+  const response = await fetch(url, {
+    method: 'POST',
+  });
+
+  const text = await response.text();
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error('Resposta inválida do servidor');
+  }
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Erro ao criar resumo');
+  }
+
+  return data;
+}
 }
 
 export const api = new ApiClient();

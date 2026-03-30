@@ -242,13 +242,7 @@ export function Dashboard() {
             <DiagnosticButtons onRefreshComplete={handleManualRefresh} />
             <LoginButton onLoginSuccess={() => carregarProcessos()} />
             <ExtracaoButton onExtracaoComplete={handleExtracaoCompleta} />
-            
-            {extractionId && (
-              <FirestoreButton
-                extractionId={extractionId}
-                onSuccess={handleFirestoreSuccess}
-              />
-            )}
+            <FirestoreButton onSuccess={handleFirestoreSuccess} />
           </div>
         </div>
 
