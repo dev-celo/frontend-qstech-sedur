@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
-import { Activity, Database, RefreshCw, Server, AlertTriangle, Trash2 } from 'lucide-react';
+import { Activity, RefreshCw, Server, AlertTriangle, Trash2 } from 'lucide-react';
 import { api } from '@/services/api';
 import { forceRefreshProcessos, limparCache as limparCacheService } from '@/services/processosService';
 
@@ -11,7 +11,7 @@ interface DiagnosticButtonsProps {
 export function DiagnosticButtons({ onRefreshComplete }: DiagnosticButtonsProps) {
   const [showDiagnostic, setShowDiagnostic] = useState(false);
   const [sessaoInfo, setSessaoInfo] = useState<any>(null);
-  const [ultimaExtracao, setUltimaExtracao] = useState<any>(null);
+  // const [ultimaExtracao, setUltimaExtracao] = useState<any>(null);
   const [serverStatus, setServerStatus] = useState<any>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
@@ -40,16 +40,16 @@ export function DiagnosticButtons({ onRefreshComplete }: DiagnosticButtonsProps)
     setLoading(null);
   };
 
-  const checkUltimaExtracao = async () => {
-    setLoading('ultima');
-    try {
-      const data = await api.ultimaExtracao();
-      setUltimaExtracao(data);
-    } catch (error) {
-      console.error('Erro ao buscar última extração:', error);
-    }
-    setLoading(null);
-  };
+  // const checkUltimaExtracao = async () => {
+  //   setLoading('ultima');
+  //   try {
+  //     const data = await api.ultimaExtracao();
+  //     setUltimaExtracao(data);
+  //   } catch (error) {
+  //     console.error('Erro ao buscar última extração:', error);
+  //   }
+  //   setLoading(null);
+  // };
 
   const checkServer = async () => {
     setLoading('server');
@@ -204,35 +204,6 @@ export function DiagnosticButtons({ onRefreshComplete }: DiagnosticButtonsProps)
                     Expira em: {new Date(sessaoInfo.expira_em).toLocaleString('pt-BR')}
                   </p>
                 )}
-              </div>
-            )}
-
-            {/* Última extração */}
-            <button
-              onClick={checkUltimaExtracao}
-              disabled={loading === 'ultima'}
-              className="w-full flex items-center justify-between p-2 bg-gray-50 rounded-lg hover:bg-gray-100"
-            >
-              <span className="text-sm flex items-center gap-2">
-                <Database className="w-4 h-4" />
-                Última extração
-              </span>
-              {loading === 'ultima' ? (
-                <RefreshCw className="w-3 h-3 animate-spin" />
-              ) : (
-                <RefreshCw className="w-3 h-3" />
-              )}
-            </button>
-
-            {ultimaExtracao?.data && (
-              <div className="text-xs p-2 bg-green-50 rounded">
-                <p><strong>Total:</strong> {ultimaExtracao.data.total || ultimaExtracao.data.resumo?.total} processos</p>
-                <p><strong>Andamento:</strong> {ultimaExtracao.data.resumo?.andamento}</p>
-                <p><strong>Convite:</strong> {ultimaExtracao.data.resumo?.convite}</p>
-                <p><strong>Finalizado:</strong> {ultimaExtracao.data.resumo?.finalizado}</p>
-                <p className="text-gray-500 mt-1">
-                  {new Date(ultimaExtracao.data.atualizado_em).toLocaleString('pt-BR')}
-                </p>
               </div>
             )}
 

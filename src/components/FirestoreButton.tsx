@@ -1,14 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
 import { Database, Loader2, CheckCircle } from 'lucide-react';
-import { firestoreService } from '@/services/firestoreService';
 
 interface FirestoreButtonProps {
   extractionId: string;
   onSuccess?: () => void;
 }
 
-export function FirestoreButton({ extractionId, onSuccess }: FirestoreButtonProps) {
+export function FirestoreButton({ onSuccess }: FirestoreButtonProps) {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
@@ -16,19 +15,32 @@ export function FirestoreButton({ extractionId, onSuccess }: FirestoreButtonProp
   const handleSalvar = async () => {
     setLoading(true);
     setStatus('saving');
-    setMessage('Salvando...');
-    
+    setMessage('Criando resumo...');
+
     try {
-      await firestoreService.salvarExtracao(extractionId);
+      const response = await fetch('/api/criar-resumo', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao criar resumo');
+      }
+
       setStatus('success');
-      setMessage('Salvo com sucesso!');
+      setMessage('Resumo criado com sucesso!');
       onSuccess?.();
-      
+
       setTimeout(() => setStatus('idle'), 3000);
-      
+
     } catch (err: any) {
       setStatus('error');
-      setMessage(err.message);
+      setMessage(err.message || 'Erro inesperado');
+
       setTimeout(() => setStatus('idle'), 3000);
     } finally {
       setLoading(false);
@@ -43,21 +55,37 @@ export function FirestoreButton({ extractionId, onSuccess }: FirestoreButtonProp
         className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg 
                    hover:bg-purple-700 transition-colors disabled:opacity-50"
       >
-        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 
-         status === 'success' ? <CheckCircle className="w-4 h-4" /> : 
-         <Database className="w-4 h-4" />}
-        <span>Salvar no Firestore</span>
+        {loading ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : status === 'success' ? (
+          <CheckCircle className="w-4 h-4" />
+        ) : (
+          <Database className="w-4 h-4" />
+        )}
+        <span>Criar resumo</span>
       </button>
 
       {(status === 'saving' || status === 'success' || status === 'error') && (
-        <div className={`absolute top-full mt-2 right-0 w-64 p-2 rounded-lg shadow-lg z-50 ${
-          status === 'saving' ? 'bg-blue-50' :
-          status === 'success' ? 'bg-green-50' : 'bg-red-50'
-        }`}>
-          <p className={`text-sm ${
-            status === 'saving' ? 'text-blue-600' :
-            status === 'success' ? 'text-green-600' : 'text-red-600'
-          }`}>{message}</p>
+        <div
+          className={`absolute top-full mt-2 right-0 w-64 p-2 rounded-lg shadow-lg z-50 ${
+            status === 'saving'
+              ? 'bg-blue-50'
+              : status === 'success'
+              ? 'bg-green-50'
+              : 'bg-red-50'
+          }`}
+        >
+          <p
+            className={`text-sm ${
+              status === 'saving'
+                ? 'text-blue-600'
+                : status === 'success'
+                ? 'text-green-600'
+                : 'text-red-600'
+            }`}
+          >
+            {message}
+          </p>
         </div>
       )}
     </div>
