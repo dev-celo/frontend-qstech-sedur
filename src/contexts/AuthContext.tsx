@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const API_URL = import.meta.env.VITE_API_URL || 'https://backend-qstech-sedur.onrender.com';
       
-      const response = await fetch(`${API_URL}/api/admin/login`, {
+      const response = await fetch(`${API_URL}/api/qstech/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
