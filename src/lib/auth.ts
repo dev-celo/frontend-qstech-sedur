@@ -1,73 +1,63 @@
-// src/lib/auth.ts
+// frontend/src/lib/auth.ts (NOVO - sem credenciais!)
+const API_URL = import.meta.env.VITE_API_URL_LOCAL || 'http://localhost:3001';
+
 export interface User {
   email: string;
   name: string;
   role: 'admin';
 }
 
-/**
- * Verifica se as credenciais são válidas
- */
 export async function authenticateUser(email: string, password: string): Promise<User | null> {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
-  const adminPasswordHash = import.meta.env.VITE_ADMIN_PASSWORD_HASH;
-  
-  if (!adminEmail || !adminPasswordHash) {
-    console.error('❌ Credenciais de admin não configuradas no .env');
-    return null;
-  }
-  
-  // SHA256 da senha fornecida
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  
-  if (email === adminEmail && hash === adminPasswordHash) {
-    return {
-      email: adminEmail,
-      name: 'Administrador',
-      role: 'admin'
-    };
-  }
-  
-  return null;
-}
-
-/**
- * Gera um token de sessão
- */
-export function generateSessionToken(user: User): string {
-  const payload = {
-    email: user.email,
-    name: user.name,
-    role: user.role,
-    exp: Date.now() + 24 * 60 * 60 * 1000
-  };
-  
-  return btoa(JSON.stringify(payload));
-}
-
-/**
- * Decodifica e valida um token de sessão
- */
-export function validateSessionToken(token: string): User | null {
   try {
-    const payload = JSON.parse(atob(token));
+    console.log('🔐 Autenticando via backend...');
     
-    if (payload.exp && payload.exp > Date.now()) {
-      return {
-        email: payload.email,
-        name: payload.name,
-        role: payload.role
-      };
+    const response = await fetch(`${API_URL}/api/admin/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      
+      // Salvar token JWT
+      localStorage.setItem('adminToken', data.token);
+      localStorage.setItem('adminSession', JSON.stringify({
+        user: data.user,
+        authenticated: true,
+        expiresAt: Date.now() + (24 * 60 * 60 * 1000)
+      }));
+      
+      return data.user;
     }
     
+    console.error('❌ Falha na autenticação');
     return null;
-  } catch {
+  } catch (error) {
+    console.error('❌ Erro ao conectar com backend:', error);
     return null;
   }
+}
+
+export function checkAuth(): boolean {
+  const session = localStorage.getItem('adminSession');
+  if (!session) return false;
+  
+  try {
+    const { authenticated, expiresAt } = JSON.parse(session);
+    const token = localStorage.getItem('adminToken');
+    
+    return authenticated && expiresAt > Date.now() && !!token;
+  } catch {
+    return false;
+  }
+}
+
+export function getAuthToken(): string | null {
+  return localStorage.getItem('adminToken');
+}
+
+export function logout(): void {
+  localStorage.removeItem('adminToken');
+  localStorage.removeItem('adminSession');
 }
