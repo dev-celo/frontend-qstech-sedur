@@ -1,8 +1,12 @@
 // src/contexts/AuthContext.tsx
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { authenticateUser, generateSessionToken, validateSessionToken } from '@/lib/auth';
-import type { User } from '@/lib/auth';
+
+interface User {
+  email: string;
+  name: string;
+  role: 'admin';
+}
 
 interface AuthContextType {
   user: User | null;
@@ -14,44 +18,66 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const SESSION_KEY = 'sedur_session';
+const TOKEN_KEY = 'adminToken';
+const USER_KEY = 'adminUser';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem(SESSION_KEY);
-    if (savedToken) {
-      const validatedUser = validateSessionToken(savedToken);
-      if (validatedUser) {
-        setUser(validatedUser);
-      } else {
-        localStorage.removeItem(SESSION_KEY);
+    // Carregar sessão do localStorage
+    const loadSession = () => {
+      try {
+        const token = localStorage.getItem(TOKEN_KEY);
+        const storedUser = localStorage.getItem(USER_KEY);
+        
+        if (token && storedUser) {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar sessão:', error);
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+      } finally {
+        setIsLoading(false);
       }
-    }
-    setIsLoading(false);
+    };
+
+    loadSession();
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
-      const user = await authenticateUser(email, password);
+      const API_URL = import.meta.env.VITE_API_URL || 'https://backend-qstech-sedur.onrender.com';
       
-      if (user) {
-        const token = generateSessionToken(user);
-        localStorage.setItem(SESSION_KEY, token);
-        setUser(user);
+      const response = await fetch(`${API_URL}/api/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Salvar token e usuário
+        localStorage.setItem(TOKEN_KEY, data.token);
+        localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+        setUser(data.user);
         return { success: true };
       }
-      
-      return { success: false, error: 'E-mail ou senha inválidos' };
+
+      return { success: false, error: data.error || 'E-mail ou senha inválidos' };
     } catch (error) {
-      return { success: false, error: 'Erro ao fazer login. Tente novamente.' };
+      console.error('Erro no login:', error);
+      return { success: false, error: 'Erro ao conectar com o servidor' };
     }
   };
 
   const logout = () => {
-    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
     setUser(null);
   };
 
