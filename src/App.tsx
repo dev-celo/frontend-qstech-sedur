@@ -1,55 +1,32 @@
-// src/App.tsx
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from '@/contexts/AuthContext';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
-import { Dashboard } from '@/pages/Dashboard';
-import { Sobre } from '@/pages/Sobre';
-import { Contato } from '@/pages/Contato';
-import { Localizacao } from '@/pages/Localizacao';
-import { LoginPage } from '@/components/LoginPage';
-import { Loader2 } from 'lucide-react';
+// frontend/src/App.tsx
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { LoginPage } from './components/LoginPage';
+import { Dashboard } from './pages/Dashboard';
+import { ToastProvider } from './components/Toast';
 
-// 🔥 Componente para proteger rotas privadas
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-green-600" />
-      </div>
-    );
+    return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
   }
   
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  return <>{children}</>;
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
-// 🔥 Componente principal com autenticação
 function AppRoutes() {
-  const { isLoading } = useAuth(); // 🔥 Removeu isAuthenticated que não era usado
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-green-600" />
-      </div>
-    );
-  }
-
+  const { isAuthenticated } = useAuth();
+  
   return (
     <Routes>
-      {/* Rotas públicas */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/sobre" element={<Sobre />} />
-      <Route path="/contato" element={<Contato />} />
-      <Route path="/localizacao" element={<Localizacao />} />
+      {/* Rota de login - se já estiver logado, vai para o dashboard */}
+      <Route 
+        path="/login" 
+        element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} 
+      />
       
-      {/* Rotas protegidas (exigem login) */}
+      {/* Rota do dashboard (raiz) - protegida */}
       <Route 
         path="/" 
         element={
@@ -58,16 +35,9 @@ function AppRoutes() {
           </PrivateRoute>
         } 
       />
-      <Route 
-        path="/dashboard" 
-        element={
-          <PrivateRoute>
-            <Dashboard />
-          </PrivateRoute>
-        } 
-      />
       
-      {/* Redireciona qualquer rota não encontrada */}
+      {/* Qualquer outra rota redireciona para a raiz ou login */}
+      <Route path="/dashboard" element={<Navigate to="/" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -75,17 +45,13 @@ function AppRoutes() {
 
 function App() {
   return (
-    <Router>
+    <ToastProvider>
       <AuthProvider>
-        <div className="min-h-screen flex flex-col">
-          <Header />
-          <main className="flex-1">
-            <AppRoutes />
-          </main>
-          <Footer />
-        </div>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
       </AuthProvider>
-    </Router>
+    </ToastProvider>
   );
 }
 

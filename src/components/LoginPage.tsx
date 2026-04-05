@@ -16,7 +16,7 @@ export function LoginPage() {
   // Se já estiver autenticado, redireciona para o dashboard
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      navigate('/dashboard', { replace: true });
+      navigate('/', { replace: true });
     }
   }, [isAuthenticated, authLoading, navigate]);
 
