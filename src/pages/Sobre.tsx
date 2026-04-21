@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { Leaf, Shield, Zap, Globe, Target, Heart } from 'lucide-react';
 import gsap from 'gsap';
+import { Header } from '@/components/Header';
+import { Footer } from "@/components/Footer";
 
 const features = [
   {
@@ -77,7 +79,9 @@ export function Sobre() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#f5f7fa]">
+    <>
+    <Header />
+    <div className="min-h-screen bg-[#f5f7fa] mb-10">
       {/* Hero Section */}
       <div ref={heroRef} className="pt-28 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
@@ -190,5 +194,7 @@ export function Sobre() {
         </div>
       </div>
     </div>
+    <Footer />
+    </>
   );
 }

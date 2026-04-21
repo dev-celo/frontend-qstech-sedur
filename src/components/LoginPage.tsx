@@ -33,6 +33,7 @@ export function LoginPage() {
       } else {
         setError(result.error || 'E-mail ou senha inválidos');
       }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       setError('Erro ao fazer login. Tente novamente.');
     } finally {

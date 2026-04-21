@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import gsap from 'gsap';
+import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
 
 export function Contato() {
   const [formData, setFormData] = useState({
@@ -66,6 +68,8 @@ export function Contato() {
   ];
 
   return (
+    <>
+    <Header />
     <div className="min-h-screen bg-[#f5f7fa]">
       {/* Hero Section */}
       <div ref={heroRef} className="pt-28 pb-16 px-4 sm:px-6 lg:px-8">
@@ -261,5 +265,7 @@ export function Contato() {
         </div>
       </div>
     </div>
+    <Footer />
+    </>
   );
 }

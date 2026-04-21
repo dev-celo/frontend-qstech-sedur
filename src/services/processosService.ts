@@ -9,7 +9,6 @@ const META_KEY = "processos_meta_v3";
 const CACHE_VERSION = "3.0";
 const DIAS_RECENTES = 7;
 
-// 🔥 Flag para controlar se já carregou do Firestore nesta sessão
 let cacheCarregado = false;
 
 function isDataRecente(dataStr: string): boolean {
@@ -17,14 +16,9 @@ function isDataRecente(dataStr: string): boolean {
   return isWithinLastDays(parsed, DIAS_RECENTES);
 }
 
-/**
- * 🔥 NOVA ABORDAGEM: Carrega UMA VEZ e guarda no localStorage
- * Todos os filtros e buscas serão feitos localmente
- */
 export async function getProcessos(forceRefresh = false): Promise<Processo[]> {
   console.log("🚀 Buscando processos...");
 
-  // 🔥 Se já carregou nesta sessão e não for refresh, usa cache
   if (!forceRefresh && cacheCarregado) {
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
@@ -33,36 +27,37 @@ export async function getProcessos(forceRefresh = false): Promise<Processo[]> {
     }
   }
 
-  // 🔥 Tenta cache do localStorage
   const cache = localStorage.getItem(CACHE_KEY);
   const meta = localStorage.getItem(META_KEY);
 
   if (!forceRefresh && cache && meta) {
-    const parsedMeta = JSON.parse(meta);
-    const resumoDoc = await getDoc(doc(db, "resumo", "dashboard"));
-    const resumoData = resumoDoc.data();
-    
-    if (resumoData && parsedMeta.ultima_atualizacao === resumoData.ultima_atualizacao) {
-      console.log("✅ Cache válido - 0 leituras!");
-      cacheCarregado = true;
-      return JSON.parse(cache);
+    try {
+      const parsedMeta = JSON.parse(meta);
+      const resumoDoc = await getDoc(doc(db, "resumo", "dashboard"));
+      const resumoData = resumoDoc.data();
+      
+      if (resumoData && parsedMeta.ultima_atualizacao === resumoData.ultima_atualizacao) {
+        console.log("✅ Cache válido - 0 leituras!");
+        cacheCarregado = true;
+        return JSON.parse(cache);
+      }
+    } catch (error) {
+      console.warn("Erro ao validar cache:", error);
     }
   }
 
-  // 🔥 Só chega aqui se precisar atualizar (1 leitura!)
   console.log("📦 Buscando documento resumo (1 leitura)...");
   
   try {
     const resumoDoc = await getDoc(doc(db, "resumo", "dashboard"));
     
     if (!resumoDoc.exists()) {
-      console.warn("⚠️ Documento resumo não encontrado. Execute uma extração primeiro.");
+      console.warn("⚠️ Documento resumo não encontrado.");
       return [];
     }
     
     const resumoData = resumoDoc.data() as any;
     
-    // Processa os dados
     const processos: Processo[] = (resumoData.processos || []).map((p: any) => ({
       id: p.id,
       protocolo: p.protocolo,
@@ -82,7 +77,6 @@ export async function getProcessos(forceRefresh = false): Promise<Processo[]> {
       isRecente: isDataRecente(p.ultima_tramitacao_data || p.data),
     }));
     
-    // 🔥 Salva TUDO no localStorage (não apenas os recentes)
     localStorage.setItem(CACHE_KEY, JSON.stringify(processos));
     localStorage.setItem(META_KEY, JSON.stringify({
       ultima_atualizacao: resumoData.ultima_atualizacao,
@@ -93,7 +87,6 @@ export async function getProcessos(forceRefresh = false): Promise<Processo[]> {
     
     console.log(`📊 ${processos.length} processos carregados (1 leitura!)`);
     
-    // 🔥 Filtra os recentes para exibição (mas mantém todos no cache)
     const recentes = processos.filter(p => p.isRecente);
     console.log(`📊 Recentes: ${recentes.length} | Total no cache: ${processos.length}`);
     
@@ -105,20 +98,18 @@ export async function getProcessos(forceRefresh = false): Promise<Processo[]> {
   }
 }
 
-/**
- * 🔥 Busca TODOS os processos do cache (para filtros locais)
- */
 export function getTodosProcessosCache(): Processo[] {
   const cache = localStorage.getItem(CACHE_KEY);
   if (cache) {
-    return JSON.parse(cache);
+    try {
+      return JSON.parse(cache);
+    } catch {
+      return [];
+    }
   }
   return [];
 }
 
-/**
- * 🔥 Busca apenas a última atualização
- */
 export async function getUltimaAtualizacaoReal(): Promise<string> {
   try {
     const resumoDoc = await getDoc(doc(db, "resumo", "dashboard"));
@@ -129,9 +120,6 @@ export async function getUltimaAtualizacaoReal(): Promise<string> {
   }
 }
 
-/**
- * 🔥 Força recarga (limpa cache e busca novo)
- */
 export async function forceRefreshProcessos(): Promise<Processo[]> {
   console.log("🔄 Forçando atualização do cache...");
   cacheCarregado = false;

@@ -44,15 +44,15 @@ export function Footer() {
         </svg>
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-6 py-16">
+      <div className="relative max-w-7xl mx-auto px-6 py-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* Brand */}
-          <div className="space-y-4">
+          <div className="">
             <Link to="/" className="flex items-center shrink-0">
               <img
-                src="/logo-qstech-nome-qstech-consultoria&gestao-ambientalverde.png"
+                src="/logo-qstech-cinza.png"
                 alt="QSTech Consultoria e Gestão Ambiental"
-                className="h-14 md:h-20 w-auto object-contain"
+                className="h-20 md:h-28 w-auto object-contain transition-transform duration-300 hover:scale-10"
               />
             </Link>
             <p className="text-white/70 text-sm leading-relaxed">

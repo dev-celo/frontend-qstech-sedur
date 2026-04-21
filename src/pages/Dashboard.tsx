@@ -10,6 +10,8 @@ import { DiagnosticButtons } from "@/components/DiagnosticButton";
 import { HeroDashboard } from "@/components/HeroDashboard";
 import { getProcessos, getUltimaAtualizacaoReal, getTodosProcessosCache, limparCache } from "@/services/processosService";
 import type { FilterState, Processo } from "@/types";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 // Função para formatar data ISO para padrão brasileiro
 function formatarDataBR(dataISO: string): string {
@@ -208,117 +210,121 @@ export function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-[110px] md:pt-[130px] px-4">
-      <div className="max-w-7xl mx-auto">
-        
-        <HeroDashboard />
+    <>
+      <Header />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-[110px] md:pt-[130px] px-4">
+        <div className="max-w-7xl mx-auto">
+          
+          <HeroDashboard />
 
-        <div className="flex flex-wrap justify-between items-center gap-3 mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className={`w-2 h-2 rounded-full animate-pulse ${
-              refreshing ? 'bg-yellow-500' : 'bg-green-500'
-            }`} />
-            <div>
-              <p className="text-xs text-gray-500 flex items-center gap-2">
-                Última atualização
-                {cacheInfo.ativo && (
-                  <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
-                    Cache
-                  </span>
-                )}
-                {refreshing && (
-                  <span className="text-xs bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded-full">
-                    Atualizando...
-                  </span>
-                )}
-              </p>
-              <p className="font-semibold text-green-600">
-                {lastUpdate || "—"}
-              </p>
+          <div className="flex flex-wrap justify-between items-center gap-3 mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className={`w-2 h-2 rounded-full animate-pulse ${
+                refreshing ? 'bg-yellow-500' : 'bg-green-500'
+              }`} />
+              <div>
+                <p className="text-xs text-gray-500 flex items-center gap-2">
+                  Última atualização
+                  {cacheInfo.ativo && (
+                    <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
+                      Cache
+                    </span>
+                  )}
+                  {refreshing && (
+                    <span className="text-xs bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded-full">
+                      Atualizando...
+                    </span>
+                  )}
+                </p>
+                <p className="font-semibold text-green-600">
+                  {lastUpdate || "—"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <DiagnosticButtons onRefreshComplete={handleManualRefresh} />
+              <LoginButton onLoginSuccess={() => carregarProcessos()} />
+              <ExtracaoButton onExtracaoComplete={handleExtracaoCompleta} />
+              <FirestoreButton onSuccess={handleFirestoreSuccess} />
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <DiagnosticButtons onRefreshComplete={handleManualRefresh} />
-            <LoginButton onLoginSuccess={() => carregarProcessos()} />
-            <ExtracaoButton onExtracaoComplete={handleExtracaoCompleta} />
-            <FirestoreButton onSuccess={handleFirestoreSuccess} />
-          </div>
+          <StatsCards resumo={resumo} total={filteredProcessos.length} />
+
+          <FilterBar
+            filters={filters}
+            onFilterChange={setFilters}
+            onClearFilters={() =>
+              setFilters({
+                search: "",
+                dateFrom: "",
+                dateTo: "",
+                status: "",
+              })
+            }
+          />
+
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+              <span className="ml-3 text-gray-500">Carregando processos...</span>
+              {cacheInfo.ativo && (
+                <p className="text-xs text-gray-400 ml-2">
+                  (usando cache)
+                </p>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                <KanbanColumn
+                  title="Em Andamento"
+                  count={andamento.length}
+                  processos={ordenarPorUltimaTramitacao(andamento)}
+                  type="andamento"
+                  index={0}
+                />
+                <KanbanColumn
+                  title="Em Convite"
+                  count={convite.length}
+                  processos={ordenarPorUltimaTramitacao(convite)}
+                  type="convite"
+                  index={1}
+                />
+                <KanbanColumn
+                  title="Finalizados"
+                  count={finalizados.length}
+                  processos={ordenarPorUltimaTramitacao(finalizados)}
+                  type="finalizado"
+                  index={2}
+                />
+              </div>
+
+              <div className="mt-6 text-center text-xs text-gray-400 bg-white p-3 rounded-lg shadow-sm">
+                <p>
+                  📊 Total no cache: {todosProcessosCache.length} processos • 
+                  Exibindo: {filteredProcessos.length} • 
+                  Andamento: {resumo.andamento} • 
+                  Convite: {resumo.convite} • 
+                  Finalizados: {resumo.finalizado}
+                </p>
+                {extractionId && (
+                  <p className="text-green-500 mt-1">
+                    ✅ Última extração: {extractionId.slice(-8)}
+                  </p>
+                )}
+                {cacheInfo.ativo && cacheInfo.data && (
+                  <p className="text-blue-500 mt-1 text-[10px]">
+                    💾 Cache: {cacheInfo.data} • 0 leituras no Firestore
+                  </p>
+                )}
+              </div>
+            </>
+          )}
         </div>
-
-        <StatsCards resumo={resumo} total={filteredProcessos.length} />
-
-        <FilterBar
-          filters={filters}
-          onFilterChange={setFilters}
-          onClearFilters={() =>
-            setFilters({
-              search: "",
-              dateFrom: "",
-              dateTo: "",
-              status: "",
-            })
-          }
-        />
-
-        {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-green-600" />
-            <span className="ml-3 text-gray-500">Carregando processos...</span>
-            {cacheInfo.ativo && (
-              <p className="text-xs text-gray-400 ml-2">
-                (usando cache)
-              </p>
-            )}
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-              <KanbanColumn
-                title="Em Andamento"
-                count={andamento.length}
-                processos={ordenarPorUltimaTramitacao(andamento)}
-                type="andamento"
-                index={0}
-              />
-              <KanbanColumn
-                title="Em Convite"
-                count={convite.length}
-                processos={ordenarPorUltimaTramitacao(convite)}
-                type="convite"
-                index={1}
-              />
-              <KanbanColumn
-                title="Finalizados"
-                count={finalizados.length}
-                processos={ordenarPorUltimaTramitacao(finalizados)}
-                type="finalizado"
-                index={2}
-              />
-            </div>
-
-            <div className="mt-6 text-center text-xs text-gray-400 bg-white p-3 rounded-lg shadow-sm">
-              <p>
-                📊 Total no cache: {todosProcessosCache.length} processos • 
-                Exibindo: {filteredProcessos.length} • 
-                Andamento: {resumo.andamento} • 
-                Convite: {resumo.convite} • 
-                Finalizados: {resumo.finalizado}
-              </p>
-              {extractionId && (
-                <p className="text-green-500 mt-1">
-                  ✅ Última extração: {extractionId.slice(-8)}
-                </p>
-              )}
-              {cacheInfo.ativo && cacheInfo.data && (
-                <p className="text-blue-500 mt-1 text-[10px]">
-                  💾 Cache: {cacheInfo.data} • 0 leituras no Firestore
-                </p>
-              )}
-            </div>
-          </>
-        )}
       </div>
-    </div>
+      <Footer />
+    </>
   );
 }

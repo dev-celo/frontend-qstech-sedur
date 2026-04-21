@@ -1,3 +1,6 @@
+// utils/date.ts
+const DEBUG_DATES = false; // 🔥 Desative em produção - true apenas para debug
+
 export function parseBRDate(dateStr: string): Date | null {
   if (!dateStr) return null;
 
@@ -13,8 +16,10 @@ export function parseBRDate(dateStr: string): Date | null {
 
   const date = new Date(ano, mes, dia);
   
-  // 🔥 Adiciona log para debug
-  console.log(`📅 Parse: ${dateStr} → ${date.toLocaleDateString('pt-BR')}`);
+  // 🔥 Log apenas se DEBUG_DATES for true
+  if (DEBUG_DATES) {
+    console.log(`📅 Parse: ${dateStr} → ${date.toLocaleDateString('pt-BR')}`);
+  }
 
   return isNaN(date.getTime()) ? null : date;
 }
@@ -23,18 +28,24 @@ export function isWithinLastDays(date: Date | null, days: number): boolean {
   if (!date) return false;
 
   const hoje = new Date();
-  // 🔥 Remove horas para comparar apenas datas
   const hojeSemHora = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
   
   const limite = new Date(hojeSemHora);
   limite.setDate(limite.getDate() - days);
 
-  // 🔥 Ajusta a data recebida para meia-noite também
   const dataSemHora = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
   const isRecente = dataSemHora >= limite && dataSemHora <= hojeSemHora;
   
-  console.log(`📊 Comparação: ${dataSemHora.toLocaleDateString('pt-BR')} >= ${limite.toLocaleDateString('pt-BR')} = ${isRecente}`);
+  // 🔥 Log apenas se DEBUG_DATES for true
+  if (DEBUG_DATES) {
+    console.log(`📊 Comparação: ${dataSemHora.toLocaleDateString('pt-BR')} >= ${limite.toLocaleDateString('pt-BR')} = ${isRecente}`);
+  }
 
   return isRecente;
+}
+
+export function formatDate(date: Date | null): string {
+  if (!date) return '';
+  return date.toLocaleDateString('pt-BR');
 }

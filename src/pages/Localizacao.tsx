@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { MapPin, Navigation, Clock, Car, Bus, Train } from 'lucide-react';
 import gsap from 'gsap';
+import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
 
 export function Localizacao() {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -46,6 +48,8 @@ export function Localizacao() {
   ];
 
   return (
+    <>
+    <Header />
     <div className="min-h-screen bg-[#f5f7fa]">
       {/* Hero Section */}
       <div ref={heroRef} className="pt-28 pb-16 px-4 sm:px-6 lg:px-8">
@@ -236,5 +240,7 @@ export function Localizacao() {
         </div>
       </div>
     </div>
+    <Footer />
+    </>
   );
 }

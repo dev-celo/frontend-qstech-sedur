@@ -3,6 +3,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LoginPage } from './components/LoginPage';
 import { Dashboard } from './pages/Dashboard';
+import { Sobre } from './pages/Sobre';
+import { Contato } from './pages/Contato';
+import { Localizacao } from './pages/Localizacao';
 import { ToastProvider } from './components/Toast';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -26,7 +29,7 @@ function AppRoutes() {
         element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} 
       />
       
-      {/* Rota do dashboard (raiz) - protegida */}
+      {/* Rotas protegidas (requerem autenticação) */}
       <Route 
         path="/" 
         element={
@@ -36,7 +39,34 @@ function AppRoutes() {
         } 
       />
       
-      {/* Qualquer outra rota redireciona para a raiz ou login */}
+      <Route 
+        path="/sobre" 
+        element={
+          <PrivateRoute>
+            <Sobre />
+          </PrivateRoute>
+        } 
+      />
+      
+      <Route 
+        path="/contato" 
+        element={
+          <PrivateRoute>
+            <Contato />
+          </PrivateRoute>
+        } 
+      />
+      
+      <Route 
+        path="/localizacao" 
+        element={
+          <PrivateRoute>
+            <Localizacao />
+          </PrivateRoute>
+        } 
+      />
+      
+      {/* Redirecionamentos */}
       <Route path="/dashboard" element={<Navigate to="/" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

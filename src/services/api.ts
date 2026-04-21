@@ -7,6 +7,7 @@ import { getAuthToken, logout } from '../lib/auth';
 const API_URL = (import.meta.env.VITE_API_URL || 'https://backend-qstech-sedur.onrender.com').replace(/\/$/, '');
 const API_URL_LOCAL = (import.meta.env.VITE_API_URL_LOCAL || 'http://localhost:3001').replace(/\/$/, '');
 const SESSION_STORAGE_KEY = 'sedur_sessao_info';
+const EXTRACTION_ID_KEY = 'extractionId';
 
 console.log('🌐 API Remota (consulta):', API_URL);
 console.log('🏠 API Local (extração):', API_URL_LOCAL);
@@ -19,6 +20,15 @@ const buildUrl = (base: string, path: string) => {
   const normalizedPath = path.replace(/^\//, '');
   return `${normalizedBase}/${normalizedPath}`;
 };
+
+/**
+ * Valida se um extractionId é válido (timestamp razoável)
+ */
+function isValidExtractionId(id: string): boolean {
+  const timestamp = parseInt(id);
+  // Timestamp deve ser depois de 2024 (1700000000000) e antes do futuro próximo
+  return !isNaN(timestamp) && timestamp > 1700000000000 && timestamp < 2000000000000;
+}
 
 // ============================================
 // AUTENTICAÇÃO PARA REQUISIÇÕES
@@ -37,7 +47,6 @@ async function authFetch(endpoint: string, options: RequestInit = {}) {
     headers,
   });
   
-  // Se token expirou (401), limpar sessão
   if (response.status === 401) {
     logout();
     throw new Error('Sessão expirada. Faça login novamente.');
@@ -73,6 +82,8 @@ class ApiClient {
 
   constructor() {
     this.carregarSessaoStorage();
+    this.carregarExtractionId();
+    this.limparExtractionIdAntigo();
   }
 
   // ============================================
@@ -97,6 +108,45 @@ class ApiClient {
       console.log('💾 Sessão salva no storage:', info);
     } catch (error) {
       console.error('Erro ao salvar sessão no storage:', error);
+    }
+  }
+
+  private carregarExtractionId() {
+    try {
+      const savedId = localStorage.getItem(EXTRACTION_ID_KEY);
+      if (savedId && isValidExtractionId(savedId)) {
+        this.extractionId = savedId;
+        console.log('📦 ExtractionId carregado:', this.extractionId);
+      } else if (savedId) {
+        console.warn('⚠️ ExtractionId inválido removido:', savedId);
+        localStorage.removeItem(EXTRACTION_ID_KEY);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar extractionId:', error);
+    }
+  }
+
+  private limparExtractionIdAntigo() {
+    const savedId = localStorage.getItem(EXTRACTION_ID_KEY);
+    if (savedId) {
+      const timestamp = parseInt(savedId);
+      // Remove IDs mais antigos que 1 dia (86400000 ms)
+      const umDiaAtras = Date.now() - 86400000;
+      if (timestamp < umDiaAtras) {
+        console.warn('🧹 ExtractionId muito antigo removido:', savedId);
+        localStorage.removeItem(EXTRACTION_ID_KEY);
+        this.extractionId = null;
+      }
+    }
+  }
+
+  private salvarExtractionId(id: string) {
+    if (isValidExtractionId(id)) {
+      this.extractionId = id;
+      localStorage.setItem(EXTRACTION_ID_KEY, id);
+      console.log('💾 ExtractionId salvo:', id);
+    } else {
+      console.warn('⚠️ Tentativa de salvar extractionId inválido:', id);
     }
   }
 
@@ -136,7 +186,6 @@ class ApiClient {
 
       console.log('✅ Login resposta:', data);
 
-      // Após login, atualiza status LOCAL
       await this.atualizarStatusSessaoLocal();
 
       return data;
@@ -160,7 +209,9 @@ class ApiClient {
     });
 
     const data = await response.json();
-    this.extractionId = data.extractionId;
+    if (data.extractionId && isValidExtractionId(data.extractionId)) {
+      this.salvarExtractionId(data.extractionId);
+    }
     return data;
   }
 
@@ -184,12 +235,35 @@ class ApiClient {
     const id = extractionId || this.extractionId;
     if (!id) return null;
 
+    // 🔥 VALIDAÇÃO DO ID
+    if (!isValidExtractionId(id)) {
+      console.warn('⚠️ Extraction ID inválido, ignorando:', id);
+      this.extractionId = null;
+      localStorage.removeItem(EXTRACTION_ID_KEY);
+      return null;
+    }
+
+    // 🔥 Verifica se o ID é recente (menos de 1 hora)
+    const timestamp = parseInt(id);
+    const umaHoraAtras = Date.now() - 3600000;
+    if (timestamp < umaHoraAtras) {
+      console.warn('⚠️ Extraction ID muito antigo, ignorando:', id);
+      return null;
+    }
+
     try {
       const url = buildUrl(API_URL_LOCAL, `data/extracao-${id}.json`);
+      console.log(`📁 Buscando dados parciais em: ${url}`);
       const response = await fetch(url);
-      if (!response.ok) return null;
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.warn(`⚠️ Arquivo de extração ${id} não encontrado`);
+        }
+        return null;
+      }
       return response.json();
-    } catch {
+    } catch (error) {
+      console.error('Erro ao buscar dados parciais:', error);
       return null;
     }
   }
@@ -263,21 +337,54 @@ class ApiClient {
 
     return data;
   }
+
+  // ============================================
+  // MÉTODOS DE UTILIDADE PÚBLICA
+  // ============================================
+  
+  /**
+   * Limpa o extractionId armazenado
+   */
+  limparExtractionId() {
+    this.extractionId = null;
+    localStorage.removeItem(EXTRACTION_ID_KEY);
+    console.log('🧹 ExtractionId limpo manualmente');
+  }
+
+  /**
+   * Verifica se há um extractionId válido
+   */
+  hasValidExtractionId(): boolean {
+    return this.extractionId !== null && isValidExtractionId(this.extractionId);
+  }
+
+  /**
+   * Obtém o extractionId atual
+   */
+  getExtractionId(): string | null {
+    return this.extractionId;
+  }
 }
 
 // ============================================
 // FUNÇÕES EXPORTADAS (API PÚBLICA)
 // ============================================
 
-// Função extrairProcessos (mantendo compatibilidade)
+/**
+ * Função para extrair processos (mantendo compatibilidade)
+ */
 export async function extrairProcessos(onProgress?: (step: string) => void): Promise<any> {
   onProgress?.('Iniciando extração...');
   const response = await authFetch('/api/extrair', { method: 'POST' });
   return response.json();
 }
 
-// Exportar instância única do cliente
+/**
+ * Instância única do cliente API
+ */
 export const api = new ApiClient();
 
-// Exportar utilitários
+/**
+ * Função de fetch autenticado
+ */
 export { authFetch };
