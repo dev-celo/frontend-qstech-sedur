@@ -301,7 +301,7 @@ export function Dashboard() {
                 />
               </div>
 
-              <div className="mt-6 text-center text-xs text-gray-400 bg-white p-3 rounded-lg shadow-sm">
+              <div className="mt-6 text-center text-xs text-gray-400 bg-white p-3 rounded-lg shadow-sm mb-6">
                 <p>
                   📊 Total no cache: {todosProcessosCache.length} processos • 
                   Exibindo: {filteredProcessos.length} • 
