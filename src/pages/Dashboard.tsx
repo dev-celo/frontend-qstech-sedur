@@ -12,6 +12,8 @@ import { getProcessos, getUltimaAtualizacaoReal, getTodosProcessosCache, limparC
 import type { FilterState, Processo } from "@/types";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { parseBRDate } from "@/utils/date";
+import { useDebounce } from "@/hooks/useDebounce";
 
 // Função para formatar data ISO para padrão brasileiro
 function formatarDataBR(dataISO: string): string {
@@ -40,15 +42,8 @@ function ordenarPorUltimaTramitacao(processos: Processo[]): Processo[] {
     
     const getTimestamp = (dataStr: string): number => {
       if (!dataStr) return 0;
-      const partes = dataStr.split(' ')[0].split('/');
-      if (partes.length === 3) {
-        return new Date(
-          parseInt(partes[2]), 
-          parseInt(partes[1]) - 1, 
-          parseInt(partes[0])
-        ).getTime();
-      }
-      return 0;
+      const date = parseBRDate(dataStr);
+      return date ? date.getTime() : 0;
     };
     
     return getTimestamp(dataB) - getTimestamp(dataA);
@@ -74,6 +69,9 @@ export function Dashboard() {
     dateTo: "",
     status: "",
   });
+
+  // 🔥 DEBOUNCE para evitar recálculo a cada tecla
+  const debouncedSearch = useDebounce(filters.search, 300);
 
   const carregarProcessos = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -137,55 +135,56 @@ export function Dashboard() {
     setRefreshKey(prev => prev + 1);
   };
 
-  // 🔥 Filtros usando o cache completo (sem novas leituras!)
+  // 🔥 FILTROS OTIMIZADOS (com debounce e parseBRDate)
   const filteredProcessos = useMemo(() => {
     const source = todosProcessosCache.length > 0 ? todosProcessosCache : processos;
     
-    let resultado = source.filter((p) => {
-      if (filters.search) {
-        const s = filters.search.toLowerCase();
-        return (
-          p.protocolo?.toLowerCase().includes(s) ||
-          p.servico?.toLowerCase().includes(s) ||
-          p.empresa?.toLowerCase().includes(s)
-        );
-      }
-      return true;
-    });
+    let resultado = [...source]; // ✅ Cria uma cópia
     
+    // 🔥 FILTRO POR TEXTO (melhorado com múltiplos campos)
+    if (debouncedSearch) {
+      const searchLower = debouncedSearch.toLowerCase();
+      resultado = resultado.filter((p) => {
+        return (
+          p.protocolo?.toLowerCase().includes(searchLower) ||
+          p.servico?.toLowerCase().includes(searchLower) ||
+          p.empresa?.toLowerCase().includes(searchLower) ||
+          p.estagio?.toLowerCase().includes(searchLower) ||
+          p.cnpj_cpf?.toLowerCase().includes(searchLower) ||
+          p.id?.toLowerCase().includes(searchLower)
+        );
+      });
+    }
+    
+    // 🔥 FILTRO POR STATUS
     if (filters.status) {
       resultado = resultado.filter(p => p.estagio === filters.status);
     }
     
+    // 🔥 FILTRO POR DATA INICIAL
     if (filters.dateFrom) {
       const fromDate = new Date(filters.dateFrom);
+      fromDate.setHours(0, 0, 0, 0);
       resultado = resultado.filter(p => {
         const dataP = p.ultima_tramitacao?.data || p.data;
-        const partes = dataP.split(' ')[0].split('/');
-        if (partes.length === 3) {
-          const dataObj = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
-          return dataObj >= fromDate;
-        }
-        return true;
+        const dataObj = parseBRDate(dataP);
+        return dataObj && dataObj >= fromDate;
       });
     }
     
+    // 🔥 FILTRO POR DATA FINAL
     if (filters.dateTo) {
       const toDate = new Date(filters.dateTo);
       toDate.setHours(23, 59, 59, 999);
       resultado = resultado.filter(p => {
         const dataP = p.ultima_tramitacao?.data || p.data;
-        const partes = dataP.split(' ')[0].split('/');
-        if (partes.length === 3) {
-          const dataObj = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
-          return dataObj <= toDate;
-        }
-        return true;
+        const dataObj = parseBRDate(dataP);
+        return dataObj && dataObj <= toDate;
       });
     }
     
     return ordenarPorUltimaTramitacao(resultado);
-  }, [todosProcessosCache, processos, filters]);
+  }, [todosProcessosCache, processos, debouncedSearch, filters.status, filters.dateFrom, filters.dateTo]);
 
   const { andamento, convite, finalizados } = useMemo(() => {
     const r = {
