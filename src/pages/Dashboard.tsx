@@ -61,29 +61,12 @@ export function Dashboard() {
     ativo: false,
     data: null
   });
-
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     dateFrom: "",
     dateTo: "",
     status: "",
   });
-
-  // 🔥 NOVO: Estado para controlar loading dos filtros
-  const [filtering, setFiltering] = useState(false);
-
-  // 🔥 NOVO: Debounce para o loading dos filtros
-  const [debouncedFilters, setDebouncedFilters] = useState(filters);
-
-  // 🔥 Atualiza o debounce dos filtros
-  useEffect(() => {
-    setFiltering(true);
-    const timer = setTimeout(() => {
-      setDebouncedFilters(filters);
-      setFiltering(false);
-    }, 150);
-    return () => clearTimeout(timer);
-  }, [filters]);
 
   const carregarProcessos = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -147,15 +130,15 @@ export function Dashboard() {
     setRefreshKey(prev => prev + 1);
   };
 
-  // 🔥 FILTROS usando debouncedFilters (para evitar loading a cada tecla)
+  // 🔥 FILTROS (sem loading, sem debounce duplicado)
   const filteredProcessos = useMemo(() => {
     const source = todosProcessosCache.length > 0 ? todosProcessosCache : processos;
     
     let resultado = [...source];
     
     // 🔥 FILTRO POR TEXTO
-    if (debouncedFilters.search) {
-      const searchLower = debouncedFilters.search.toLowerCase();
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
       resultado = resultado.filter((p) => {
         return (
           p.protocolo?.toLowerCase().includes(searchLower) ||
@@ -169,13 +152,13 @@ export function Dashboard() {
     }
     
     // 🔥 FILTRO POR STATUS
-    if (debouncedFilters.status) {
-      resultado = resultado.filter(p => p.estagio === debouncedFilters.status);
+    if (filters.status) {
+      resultado = resultado.filter(p => p.estagio === filters.status);
     }
     
     // 🔥 FILTRO POR DATA INICIAL
-    if (debouncedFilters.dateFrom) {
-      const fromDate = new Date(debouncedFilters.dateFrom);
+    if (filters.dateFrom) {
+      const fromDate = new Date(filters.dateFrom);
       fromDate.setHours(0, 0, 0, 0);
       resultado = resultado.filter(p => {
         const dataP = p.ultima_tramitacao?.data || p.data;
@@ -185,8 +168,8 @@ export function Dashboard() {
     }
     
     // 🔥 FILTRO POR DATA FINAL
-    if (debouncedFilters.dateTo) {
-      const toDate = new Date(debouncedFilters.dateTo);
+    if (filters.dateTo) {
+      const toDate = new Date(filters.dateTo);
       toDate.setHours(23, 59, 59, 999);
       resultado = resultado.filter(p => {
         const dataP = p.ultima_tramitacao?.data || p.data;
@@ -196,7 +179,7 @@ export function Dashboard() {
     }
     
     return ordenarPorUltimaTramitacao(resultado);
-  }, [todosProcessosCache, processos, debouncedFilters]);
+  }, [todosProcessosCache, processos, filters.search, filters.status, filters.dateFrom, filters.dateTo]);
 
   const { andamento, convite, finalizados } = useMemo(() => {
     const r = {
@@ -219,9 +202,6 @@ export function Dashboard() {
     convite: convite.length,
     finalizado: finalizados.length,
   };
-
-  // 🔥 Verifica se está carregando ou filtrando
-  const isLoading = loading || filtering;
 
   return (
     <>
@@ -279,13 +259,10 @@ export function Dashboard() {
             }
           />
 
-          {/* 🔥 LOADING SMOOTH - não pisca mais */}
-          {isLoading ? (
-            <div className="flex justify-center items-center py-20 transition-opacity duration-300">
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
               <Loader2 className="w-8 h-8 animate-spin text-green-600" />
-              <span className="ml-3 text-gray-500">
-                {loading ? "Carregando processos..." : "Aplicando filtros..."}
-              </span>
+              <span className="ml-3 text-gray-500">Carregando processos...</span>
               {cacheInfo.ativo && (
                 <p className="text-xs text-gray-400 ml-2">
                   (usando cache)
@@ -294,7 +271,7 @@ export function Dashboard() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 transition-opacity duration-300">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                 <KanbanColumn
                   title="Em Andamento"
                   count={andamento.length}

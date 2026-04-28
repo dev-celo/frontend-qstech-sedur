@@ -39,22 +39,23 @@ export function FilterBar({ filters, onFilterChange, onClearFilters }: FilterBar
     }
   }, []);
 
-  // 🔥 Quando o debounce termina, atualiza o filtro global
+  // 🔥 CORRIGIDO: Quando o debounce termina, atualiza APENAS o search
+  // ✅ NÃO DEPENDE do filters para evitar loop!
   useEffect(() => {
     onFilterChange({ ...filters, search: debouncedSearch });
-  }, [debouncedSearch, filters, onFilterChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]); // ✅ REMOVIDO: filters e onFilterChange das dependências
 
   // 🔥 Sincroniza se o filtro global mudar externamente
   useEffect(() => {
     if (filters.search !== localSearch) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalSearch(filters.search);
     }
-  }, [filters.search, localSearch]);
+  }, [filters.search]); // ✅ REMOVIDO: localSearch da dependência
 
-  // Handlers otimizados com useCallback
+  // Handlers otimizados
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalSearch(e.target.value); // 🔥 Atualiza localmente (RÁPIDO!)
+    setLocalSearch(e.target.value);
   }, []);
 
   const handleClearSearch = useCallback(() => {
@@ -91,7 +92,7 @@ export function FilterBar({ filters, onFilterChange, onClearFilters }: FilterBar
       className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6"
     >
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* Search Input - AGORA COM ESTADO LOCAL RÁPIDO */}
+        {/* Search Input */}
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7f8c8d]" />
           <Input
