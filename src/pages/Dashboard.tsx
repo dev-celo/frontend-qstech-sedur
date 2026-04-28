@@ -13,7 +13,6 @@ import type { FilterState, Processo } from "@/types";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { parseBRDate } from "@/utils/date";
-import { useDebounce } from "@/hooks/useDebounce";
 
 // Função para formatar data ISO para padrão brasileiro
 function formatarDataBR(dataISO: string): string {
@@ -70,8 +69,21 @@ export function Dashboard() {
     status: "",
   });
 
-  // 🔥 DEBOUNCE para evitar recálculo a cada tecla
-  const debouncedSearch = useDebounce(filters.search, 300);
+  // 🔥 NOVO: Estado para controlar loading dos filtros
+  const [filtering, setFiltering] = useState(false);
+
+  // 🔥 NOVO: Debounce para o loading dos filtros
+  const [debouncedFilters, setDebouncedFilters] = useState(filters);
+
+  // 🔥 Atualiza o debounce dos filtros
+  useEffect(() => {
+    setFiltering(true);
+    const timer = setTimeout(() => {
+      setDebouncedFilters(filters);
+      setFiltering(false);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [filters]);
 
   const carregarProcessos = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -135,15 +147,15 @@ export function Dashboard() {
     setRefreshKey(prev => prev + 1);
   };
 
-  // 🔥 FILTROS OTIMIZADOS (com debounce e parseBRDate)
+  // 🔥 FILTROS usando debouncedFilters (para evitar loading a cada tecla)
   const filteredProcessos = useMemo(() => {
     const source = todosProcessosCache.length > 0 ? todosProcessosCache : processos;
     
-    let resultado = [...source]; // ✅ Cria uma cópia
+    let resultado = [...source];
     
-    // 🔥 FILTRO POR TEXTO (melhorado com múltiplos campos)
-    if (debouncedSearch) {
-      const searchLower = debouncedSearch.toLowerCase();
+    // 🔥 FILTRO POR TEXTO
+    if (debouncedFilters.search) {
+      const searchLower = debouncedFilters.search.toLowerCase();
       resultado = resultado.filter((p) => {
         return (
           p.protocolo?.toLowerCase().includes(searchLower) ||
@@ -157,13 +169,13 @@ export function Dashboard() {
     }
     
     // 🔥 FILTRO POR STATUS
-    if (filters.status) {
-      resultado = resultado.filter(p => p.estagio === filters.status);
+    if (debouncedFilters.status) {
+      resultado = resultado.filter(p => p.estagio === debouncedFilters.status);
     }
     
     // 🔥 FILTRO POR DATA INICIAL
-    if (filters.dateFrom) {
-      const fromDate = new Date(filters.dateFrom);
+    if (debouncedFilters.dateFrom) {
+      const fromDate = new Date(debouncedFilters.dateFrom);
       fromDate.setHours(0, 0, 0, 0);
       resultado = resultado.filter(p => {
         const dataP = p.ultima_tramitacao?.data || p.data;
@@ -173,8 +185,8 @@ export function Dashboard() {
     }
     
     // 🔥 FILTRO POR DATA FINAL
-    if (filters.dateTo) {
-      const toDate = new Date(filters.dateTo);
+    if (debouncedFilters.dateTo) {
+      const toDate = new Date(debouncedFilters.dateTo);
       toDate.setHours(23, 59, 59, 999);
       resultado = resultado.filter(p => {
         const dataP = p.ultima_tramitacao?.data || p.data;
@@ -184,7 +196,7 @@ export function Dashboard() {
     }
     
     return ordenarPorUltimaTramitacao(resultado);
-  }, [todosProcessosCache, processos, debouncedSearch, filters.status, filters.dateFrom, filters.dateTo]);
+  }, [todosProcessosCache, processos, debouncedFilters]);
 
   const { andamento, convite, finalizados } = useMemo(() => {
     const r = {
@@ -207,6 +219,9 @@ export function Dashboard() {
     convite: convite.length,
     finalizado: finalizados.length,
   };
+
+  // 🔥 Verifica se está carregando ou filtrando
+  const isLoading = loading || filtering;
 
   return (
     <>
@@ -264,10 +279,13 @@ export function Dashboard() {
             }
           />
 
-          {loading ? (
-            <div className="flex justify-center items-center py-20">
+          {/* 🔥 LOADING SMOOTH - não pisca mais */}
+          {isLoading ? (
+            <div className="flex justify-center items-center py-20 transition-opacity duration-300">
               <Loader2 className="w-8 h-8 animate-spin text-green-600" />
-              <span className="ml-3 text-gray-500">Carregando processos...</span>
+              <span className="ml-3 text-gray-500">
+                {loading ? "Carregando processos..." : "Aplicando filtros..."}
+              </span>
               {cacheInfo.ativo && (
                 <p className="text-xs text-gray-400 ml-2">
                   (usando cache)
@@ -276,7 +294,7 @@ export function Dashboard() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 transition-opacity duration-300">
                 <KanbanColumn
                   title="Em Andamento"
                   count={andamento.length}

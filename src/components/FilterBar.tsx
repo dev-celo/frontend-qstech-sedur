@@ -42,7 +42,7 @@ export function FilterBar({ filters, onFilterChange, onClearFilters }: FilterBar
   // 🔥 Quando o debounce termina, atualiza o filtro global
   useEffect(() => {
     onFilterChange({ ...filters, search: debouncedSearch });
-  }, [debouncedSearch]);
+  }, [debouncedSearch, filters, onFilterChange]);
 
   // 🔥 Sincroniza se o filtro global mudar externamente
   useEffect(() => {
@@ -50,7 +50,7 @@ export function FilterBar({ filters, onFilterChange, onClearFilters }: FilterBar
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalSearch(filters.search);
     }
-  }, [filters.search]);
+  }, [filters.search, localSearch]);
 
   // Handlers otimizados com useCallback
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
