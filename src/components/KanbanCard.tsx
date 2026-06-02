@@ -2,6 +2,7 @@ import { useRef, useEffect } from "react";
 import { FileText, Building2, Clock, Hash, ArrowRight, Calendar } from "lucide-react";
 import type { Processo } from "@/types";
 import gsap from "gsap";
+import { PdfButton } from "./PdfButton";
 
 interface KanbanCardProps {
   processo: Processo;
@@ -48,14 +49,26 @@ export function KanbanCard({ processo, index }: KanbanCardProps) {
 
   // 🔥 USA A ÚLTIMA TRAMITAÇÃO DO RESUMO
   const ultimaTramitacao = processo.ultima_tramitacao;
-  
+
+  // FILTRA OS PROCESSOS DOS ULTIMOS 7 DIAS
+  const parsarData = (data: string | undefined) => {
+    if (!data) return new Date(0);
+    const [dia, mes, anoHora] = data.split("/");
+    const [ano, hora] = anoHora.split(" ");
+    return new Date(`${ano}-${mes}-${dia}T${hora}`);
+  };
+
+  const seteDiasAtras = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const isRecente = parsarData(processo.ultima_tramitacao?.data) >= seteDiasAtras;
+
+
   // 🔥 Formata a data no formato "16 Mar" (mês abreviado)
   const formatarDataAbreviada = (dataStr: string) => {
     if (!dataStr) return "";
     const partes = dataStr.split(' ')[0].split('/');
     if (partes.length === 3) {
       const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-      return `${parseInt(partes[0])} ${meses[parseInt(partes[1])-1]}`;
+      return `${parseInt(partes[0])} ${meses[parseInt(partes[1]) - 1]}`;
     }
     return dataStr;
   };
@@ -66,7 +79,7 @@ export function KanbanCard({ processo, index }: KanbanCardProps) {
     try {
       const dataStr = ultimaTramitacao.data.split(' ')[0];
       const hoje = new Date();
-      const hojeStr = `${hoje.getDate().toString().padStart(2,'0')}/${(hoje.getMonth()+1).toString().padStart(2,'0')}/${hoje.getFullYear()}`;
+      const hojeStr = `${hoje.getDate().toString().padStart(2, '0')}/${(hoje.getMonth() + 1).toString().padStart(2, '0')}/${hoje.getFullYear()}`;
       return dataStr === hojeStr;
     } catch {
       return false;
@@ -92,12 +105,11 @@ export function KanbanCard({ processo, index }: KanbanCardProps) {
       className="bg-white rounded-xl p-5 shadow-md border border-gray-200 hover:shadow-xl transition-all duration-300 relative overflow-hidden group"
     >
       {/* Barra lateral colorida */}
-      <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${
-        processo.estagio?.toLowerCase().includes('encaminhado') ? 'bg-blue-500' :
+      <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${processo.estagio?.toLowerCase().includes('encaminhado') ? 'bg-blue-500' :
         processo.estagio?.toLowerCase().includes('convite') ? 'bg-amber-500' :
-        processo.estagio?.toLowerCase().includes('finalizado') ? 'bg-green-500' :
-        'bg-gray-400'
-      }`} />
+          processo.estagio?.toLowerCase().includes('finalizado') ? 'bg-green-500' :
+            'bg-gray-400'
+        }`} />
 
       {/* Shine Effect */}
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
@@ -113,7 +125,7 @@ export function KanbanCard({ processo, index }: KanbanCardProps) {
               {getProtocoloDisplay()}
             </span>
           </div>
-          
+
           {isHoje() && (
             <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium animate-pulse shadow-sm">
               🔴 Hoje
@@ -152,7 +164,7 @@ export function KanbanCard({ processo, index }: KanbanCardProps) {
               <Clock className="w-3.5 h-3.5" />
               Última Movimentação
             </p>
-            
+
             <div className="bg-blue-50/70 p-3 rounded-lg border border-blue-100">
               <div className="flex items-center gap-2 mb-2">
                 <Calendar className="w-4 h-4 text-blue-600" />
@@ -163,7 +175,7 @@ export function KanbanCard({ processo, index }: KanbanCardProps) {
                   {ultimaTramitacao.data.split(' ')[1] || ''}
                 </span>
               </div>
-              
+
               <div className="flex items-start gap-2">
                 <span className="text-xs font-medium text-gray-600 min-w-[70px]">
                   {getStageIcon(ultimaTramitacao.estagio)} {ultimaTramitacao.estagio}
@@ -178,11 +190,16 @@ export function KanbanCard({ processo, index }: KanbanCardProps) {
         )}
 
         {/* Footer com Estágio Atual */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+        <div className="flex gap-2 items-center justify-between pt-3 border-t border-gray-100">
           <span className={`text-xs px-3 py-1.5 rounded-full border font-medium flex items-center gap-1 ${getStageColor(processo.estagio || "")}`}>
             <span>{getStageIcon(processo.estagio || "")}</span>
             {processo.estagio || "N/A"}
           </span>
+
+          {isRecente && (
+            <PdfButton processo={processo} getStageColor={getStageColor} />
+          )}
+
           <span className="text-[10px] text-gray-400 bg-gray-50 px-2 py-1 rounded">
             ID: {processo.id}
           </span>
