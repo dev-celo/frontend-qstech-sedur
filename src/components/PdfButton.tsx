@@ -14,7 +14,7 @@ export function PdfButton({ processo }: PdfButtonProps) {
   const [pdfs, setPdfs] = useState<Pdfs[]>([]);
   const [aberto, setAberto] = useState(false);
   const [carregando, setCarregando] = useState(true);
-  const buttonRef = useRef<HTMLSpanElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const buscarPdfs = async () => {
@@ -54,7 +54,7 @@ export function PdfButton({ processo }: PdfButtonProps) {
   // Fechar dropdown ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setAberto(false);
       }
     };
@@ -63,15 +63,9 @@ export function PdfButton({ processo }: PdfButtonProps) {
   }, []);
 
   const temPdfs = pdfs.length > 0;
-  // const stageColor = getStageColor(processo.estagio || "");
-
-  // 🔥 CORES E ESTILOS CONSISTENTES (independente do status)
-  const corBase = temPdfs 
-    ? "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
-    : "bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed";
 
   return (
-    <span className="relative inline-flex" ref={buttonRef}>
+    <div className="relative inline-flex" ref={containerRef}>
       <button
         onClick={() => temPdfs && setAberto((v) => !v)}
         disabled={!temPdfs || carregando}
@@ -79,11 +73,10 @@ export function PdfButton({ processo }: PdfButtonProps) {
           text-[11px] font-medium px-2.5 py-1 rounded-full border 
           flex items-center gap-1.5 transition-all duration-200 whitespace-nowrap
           ${temPdfs ? "cursor-pointer hover:scale-105 hover:shadow-sm" : "cursor-not-allowed"}
-          ${corBase}
+          bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100
         `}
         title={temPdfs ? "Visualizar PDFs" : "Nenhum PDF disponível"}
       >
-        {/* Ícone PDF consistente */}
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" className="w-3 h-3 fill-current">
           <path d="M0 64C0 28.7 28.7 0 64 0H224V128c0 17.7 14.3 32 32 32H384V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V64zm384 64H256V0L384 128z" />
         </svg>
@@ -92,14 +85,14 @@ export function PdfButton({ processo }: PdfButtonProps) {
         {carregando && <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />}
       </button>
 
-      {/* 🔥 DROPDOWN - POSICIONADO PARA NÃO CORTAR */}
+      {/* 🔥 DROPDOWN - POSICIONADO ABAIXO DO BOTÃO */}
       {aberto && temPdfs && (
         <>
           {/* Backdrop para fechar ao clicar fora */}
           <div className="fixed inset-0 z-40" onClick={() => setAberto(false)} />
           
-          {/* Dropdown - posicionado acima do botão (bottom-full) */}
-          <div className="absolute bottom-full right-0 mb-2 z-50 min-w-[260px] bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden">
+          {/* Dropdown - posicionado abaixo e à direita */}
+          <div className="absolute top-full right-0 mt-1 z-50 min-w-[260px] bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden">
             <div className="py-1.5">
               <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100">
                 <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">
@@ -127,6 +120,6 @@ export function PdfButton({ processo }: PdfButtonProps) {
           </div>
         </>
       )}
-    </span>
+    </div>
   );
 }
