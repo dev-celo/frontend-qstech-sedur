@@ -1,5 +1,5 @@
-import { useRef, useEffect } from "react";
-import { FileText, Building2, Clock, Hash, ArrowRight, Calendar } from "lucide-react";
+import { useRef, useEffect, useState } from "react";
+import { FileText, Clock, Hash, ChevronRight } from "lucide-react";
 import type { Processo } from "@/types";
 import gsap from "gsap";
 import { PdfButton } from "./PdfButton";
@@ -7,73 +7,52 @@ import { PdfButton } from "./PdfButton";
 interface KanbanCardProps {
   processo: Processo;
   index: number;
+  isHovered?: boolean;
+  onHover?: (id: string | null) => void;
 }
 
-export function KanbanCard({ processo, index }: KanbanCardProps) {
-  const cardRef = useRef<HTMLDivElement>(null);
+// 🔥 FUNÇÃO getStageColor (usada pelo PdfButton)
+const getStageColor = (estagio: string) => {
+  const e = estagio?.toLowerCase() || "";
+  if (e.includes("encaminhado")) return "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100";
+  if (e.includes("convite")) return "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100";
+  if (e.includes("finalizado") || e.includes("arquiv")) return "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100";
+  if (e.includes("entrada")) return "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100";
+  return "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100";
+};
 
+export function KanbanCard({ processo, index, onHover }: KanbanCardProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isCardHovered, setIsCardHovered] = useState(false);
+
+  // Animação de entrada com stagger
   useEffect(() => {
     if (cardRef.current) {
       gsap.fromTo(
         cardRef.current,
-        { y: 30, opacity: 0, scale: 0.95 },
+        { opacity: 0, y: 20 },
         {
-          y: 0,
           opacity: 1,
-          scale: 1,
+          y: 0,
           duration: 0.5,
-          delay: index * 0.05,
-          ease: "back.out(1.2)",
-        },
+          delay: index * 0.03,
+          ease: "power2.out",
+        }
       );
     }
   }, [index]);
 
-  const getStageColor = (estagio: string) => {
-    const estagioLower = estagio.toLowerCase();
-    if (estagioLower.includes("encaminhado")) return "bg-blue-100 text-blue-700 border-blue-200";
-    if (estagioLower.includes("convite")) return "bg-amber-100 text-amber-700 border-amber-200";
-    if (estagioLower.includes("finalizado") || estagioLower.includes("arquiv")) return "bg-green-100 text-green-700 border-green-200";
-    if (estagioLower.includes("entrada")) return "bg-purple-100 text-purple-700 border-purple-200";
-    return "bg-gray-100 text-gray-700 border-gray-200";
-  };
-
-  const getStageIcon = (estagio: string) => {
-    const estagioLower = estagio.toLowerCase();
-    if (estagioLower.includes("encaminhado")) return "→";
-    if (estagioLower.includes("convite")) return "✉";
-    if (estagioLower.includes("finalizado")) return "✓";
-    if (estagioLower.includes("entrada")) return "↓";
-    return "•";
-  };
-
-  // 🔥 USA A ÚLTIMA TRAMITAÇÃO DO RESUMO
+  // Dados
   const ultimaTramitacao = processo.ultima_tramitacao;
 
-  // FILTRA OS PROCESSOS DOS ULTIMOS 7 DIAS
-  const parsarData = (data: string | undefined) => {
-    if (!data) return new Date(0);
-    const [dia, mes, anoHora] = data.split("/");
-    const [ano, hora] = anoHora.split(" ");
-    return new Date(`${ano}-${mes}-${dia}T${hora}`);
-  };
-
-  const seteDiasAtras = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const isRecente = parsarData(processo.ultima_tramitacao?.data) >= seteDiasAtras;
-
-
-  // 🔥 Formata a data no formato "16 Mar" (mês abreviado)
-  const formatarDataAbreviada = (dataStr: string) => {
+  const formatarDataCompleta = (dataStr: string) => {
     if (!dataStr) return "";
-    const partes = dataStr.split(' ')[0].split('/');
-    if (partes.length === 3) {
-      const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-      return `${parseInt(partes[0])} ${meses[parseInt(partes[1]) - 1]}`;
-    }
-    return dataStr;
+    const [datePart, timePart] = dataStr.split(" ");
+    const [dia, mes] = datePart.split("/");
+    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    return `${parseInt(dia)} ${meses[parseInt(mes) - 1]} • ${timePart || ""}`;
   };
 
-  // Verifica se a tramitação é de hoje
   const isHoje = () => {
     if (!ultimaTramitacao?.data) return false;
     try {
@@ -86,122 +65,151 @@ export function KanbanCard({ processo, index }: KanbanCardProps) {
     }
   };
 
-  const getEmpresaDisplay = () => {
-    if (!processo.empresa) return "Empresa não informada";
-    return processo.empresa;
+  const getStatusDot = (estagio: string) => {
+    const e = estagio?.toLowerCase() || "";
+    if (e.includes("encaminhado")) return "bg-blue-500";
+    if (e.includes("convite")) return "bg-amber-500";
+    if (e.includes("finalizado") || e.includes("arquiv")) return "bg-emerald-500";
+    if (e.includes("entrada")) return "bg-purple-500";
+    return "bg-slate-400";
   };
 
-  const getServicoDisplay = () => {
-    return processo.servico || "Serviço não informado";
+  const getStatusColor = (estagio: string) => {
+    const e = estagio?.toLowerCase() || "";
+    if (e.includes("encaminhado")) return "bg-blue-50 text-blue-700";
+    if (e.includes("convite")) return "bg-amber-50 text-amber-700";
+    if (e.includes("finalizado") || e.includes("arquiv")) return "bg-emerald-50 text-emerald-700";
+    if (e.includes("entrada")) return "bg-purple-50 text-purple-700";
+    return "bg-slate-50 text-slate-600";
   };
 
-  const getProtocoloDisplay = () => {
-    return processo.protocolo || "Sem protocolo";
+  const handleMouseEnter = () => {
+    setIsCardHovered(true);
+    onHover?.(processo.id);
+  };
+
+  const handleMouseLeave = () => {
+    setIsCardHovered(false);
+    onHover?.(null);
   };
 
   return (
     <div
       ref={cardRef}
-      className="bg-white rounded-xl p-5 shadow-md border border-gray-200 hover:shadow-xl transition-all duration-300 relative overflow-hidden group"
+      className="group relative bg-white rounded-3xl transition-all duration-300"
+      style={{
+        boxShadow: isCardHovered 
+          ? "0 20px 40px -12px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0,0,0,0.02)"
+          : "0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0,0,0,0.02)",
+        transform: isCardHovered ? "translateY(-4px)" : "translateY(0)",
+        border: "1px solid",
+        borderColor: isCardHovered ? "rgba(203, 213, 225, 0.5)" : "rgba(226, 232, 240, 0.6)",
+        transition: "all 300ms cubic-bezier(0.2, 0, 0, 1)",
+      }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
-      {/* Barra lateral colorida */}
-      <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${processo.estagio?.toLowerCase().includes('encaminhado') ? 'bg-blue-500' :
-        processo.estagio?.toLowerCase().includes('convite') ? 'bg-amber-500' :
-          processo.estagio?.toLowerCase().includes('finalizado') ? 'bg-green-500' :
-            'bg-gray-400'
-        }`} />
+      {/* Barra lateral gradiente sutil */}
+      <div 
+        className="absolute left-0 top-4 bottom-4 w-[3px] rounded-full transition-all duration-300"
+        style={{
+          background: `linear-gradient(180deg, var(--status-color), rgba(255,255,255,0))`,
+          opacity: isCardHovered ? 0.8 : 0.5,
+        }}
+        data-status-color={getStatusDot(processo.estagio || "")}
+      />
 
-      {/* Shine Effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-
-      <div className="relative space-y-4 pl-3">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3">
+      <div className="p-6 pl-5 space-y-5">
+        
+        {/* Topo: Protocolo (discreto) + Badges + PDF */}
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-[#27ae60]/10 rounded-lg">
-              <Hash className="w-4 h-4 text-[#27ae60]" />
-            </div>
-            <span className="text-sm font-mono font-semibold text-[#2c3e50]">
-              {getProtocoloDisplay()}
+            <Hash className="w-3.5 h-3.5 text-slate-300" />
+            <span className="text-[11px] font-mono text-slate-400 tracking-wide">
+              {processo.protocolo || "Sem protocolo"}
             </span>
           </div>
-
-          {isHoje() && (
-            <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium animate-pulse shadow-sm">
-              🔴 Hoje
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {isHoje() && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 border border-red-100">
+                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-[10px] font-semibold text-red-600">HOJE</span>
+              </div>
+            )}
+            {/* 🔥 PDFBUTTON CORRIGIDO */}
+            <div className="transition-transform duration-200 hover:scale-105">
+              <PdfButton processo={processo} getStageColor={getStageColor} />
+            </div>
+          </div>
         </div>
 
-        {/* Empresa */}
-        <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-          <div className="flex items-start gap-2">
-            <Building2 className="w-4 h-4 text-[#27ae60] mt-0.5 flex-shrink-0" />
-            <p className="text-sm font-semibold text-[#2c3e50] leading-relaxed">
-              {getEmpresaDisplay()}
-            </p>
-          </div>
+        {/* Empresa - Destaque principal */}
+        <div>
+          <h3 className="text-[17px] font-bold text-slate-800 leading-tight tracking-tight line-clamp-3">
+            {processo.empresa || "Empresa não informada"}
+          </h3>
         </div>
 
         {/* Serviço */}
-        <div className="text-sm text-gray-600 pl-6">
-          <span className="text-xs text-gray-400 block mb-1">Serviço</span>
-          <p className="leading-relaxed">{getServicoDisplay()}</p>
-        </div>
+        <p className="text-[13px] text-slate-500 leading-relaxed line-clamp-2">
+          {processo.servico || "Serviço não informado"}
+        </p>
 
-        {/* CNPJ */}
-        {processo.cnpj_cpf && (
-          <div className="flex items-center gap-2 text-xs text-gray-500 pl-6">
-            <FileText className="w-3.5 h-3.5" />
-            <span className="font-mono">{processo.cnpj_cpf}</span>
-          </div>
-        )}
-
-        {/* 🔥 ÚLTIMA TRAMITAÇÃO - DESTAQUE */}
+        {/* Última movimentação - Timeline sutil */}
         {ultimaTramitacao && (
-          <div className="space-y-2 pt-2 border-t border-gray-100">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" />
-              Última Movimentação
-            </p>
-
-            <div className="bg-blue-50/70 p-3 rounded-lg border border-blue-100">
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-bold text-blue-700">
-                  {formatarDataAbreviada(ultimaTramitacao.data)}
-                </span>
-                <span className="text-xs text-gray-500">
-                  {ultimaTramitacao.data.split(' ')[1] || ''}
-                </span>
+          <div className="pt-1 space-y-3">
+            <div className="flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5 text-slate-300" />
+              <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+                Última movimentação
+              </span>
+            </div>
+            
+            <div className="flex gap-3">
+              <div className="flex flex-col items-center">
+                <div className={`w-2 h-2 rounded-full ${getStatusDot(ultimaTramitacao.estagio)}`} />
+                <div className="w-px h-7 bg-slate-100 mt-1" />
               </div>
-
-              <div className="flex items-start gap-2">
-                <span className="text-xs font-medium text-gray-600 min-w-[70px]">
-                  {getStageIcon(ultimaTramitacao.estagio)} {ultimaTramitacao.estagio}
-                </span>
-                <ArrowRight className="w-3 h-3 text-gray-400 mt-0.5" />
-                <span className="text-xs text-gray-600 flex-1 line-clamp-2">
-                  {ultimaTramitacao.destino || "Destino não informado"}
-                </span>
+              <div className="flex-1 space-y-1.5">
+                <div className="text-[13px] font-semibold text-slate-700">
+                  {formatarDataCompleta(ultimaTramitacao.data)}
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${getStatusColor(ultimaTramitacao.estagio)}`}>
+                    <span className={`inline-block w-1.5 h-1.5 rounded-full ${getStatusDot(ultimaTramitacao.estagio)} mr-1.5`} />
+                    {ultimaTramitacao.estagio}
+                  </span>
+                  <ChevronRight className="w-3 h-3 text-slate-300" />
+                  <span className="text-[11px] text-slate-500 leading-relaxed line-clamp-2">
+                    {ultimaTramitacao.destino?.split(' ').slice(0, 4).join(' ') || "Destino não informado"}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Footer com Estágio Atual */}
-        <div className="flex gap-2 items-center justify-between pt-3 border-t border-gray-100">
-          <span className={`text-xs px-3 py-1.5 rounded-full border font-medium flex items-center gap-1 ${getStageColor(processo.estagio || "")}`}>
-            <span>{getStageIcon(processo.estagio || "")}</span>
+        {/* Rodapé com metadados - organizado */}
+        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+          <div className="flex items-center gap-3">
+            {processo.cnpj_cpf && (
+              <div className="flex items-center gap-1.5">
+                <FileText className="w-3 h-3 text-slate-300" />
+                <span className="text-[10px] font-mono text-slate-400">
+                  {processo.cnpj_cpf}
+                </span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-slate-300">ID:</span>
+              <span className="text-[10px] font-mono text-slate-400">
+                {processo.id?.slice(-8)}
+              </span>
+            </div>
+          </div>
+          
+          <span className={`text-[10px] font-medium px-2.5 py-0.5 rounded-full ${getStatusColor(processo.estagio || "")}`}>
             {processo.estagio || "N/A"}
-          </span>
-
-          {isRecente && (
-            <PdfButton processo={processo} getStageColor={getStageColor} />
-          )}
-
-          <span className="text-[10px] text-gray-400 bg-gray-50 px-2 py-1 rounded">
-            ID: {processo.id}
           </span>
         </div>
       </div>
