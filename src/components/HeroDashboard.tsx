@@ -186,7 +186,7 @@ export function HeroDashboard({
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-600" />
                 </span>
                 <span className="text-[11px] font-semibold text-emerald-700 tracking-wide">
-                  QSTEC • MONITORAMENTO OPERACIONAL
+                  QSTECH • MONITORAMENTO OPERACIONAL
                 </span>
               </div>
 
