@@ -205,7 +205,7 @@ export function HeroDashboard({
               <p className="text-[15px] text-slate-600 leading-relaxed max-w-xl">
                 Acompanhe tramitações, atualizações recentes e status dos
                 processos ambientais em uma visualização organizada para a
-                operação da QSTEC.
+                operação da QSTECH.
               </p>
 
               {/* Chips de status operacional */}
