@@ -1,7 +1,7 @@
 import type { Processo } from "@/types";
 import { useEffect, useState, useRef } from "react";
 import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
-import { dbPdfs } from "../firebase-pdfs";
+import { db } from "../firebase.ts";
 
 interface PdfButtonProps {
   processo: Processo;
@@ -21,7 +21,7 @@ export function PdfButton({ processo }: PdfButtonProps) {
       setCarregando(true);
       try {
         const q = query(
-          collection(dbPdfs, "pdfs"),
+          collection(db, "pdfs"),
           where("numero_processo", "==", processo.protocolo),
           orderBy("createdAt", "desc")
         );
