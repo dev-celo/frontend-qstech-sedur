@@ -147,8 +147,6 @@ export function Dashboard() {
     const source = todosProcessosCache.length > 0 ? todosProcessosCache : processos;
 
     let resultado = [...source];
-    console.log(resultado, 'Dashboard');
-
 
     // 🔥 FILTRO POR TEXTO
     if (filters.search) {
