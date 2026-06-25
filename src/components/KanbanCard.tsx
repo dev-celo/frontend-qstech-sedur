@@ -25,8 +25,7 @@ export function KanbanCard({ processo, index, onHover }: KanbanCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isCardHovered, setIsCardHovered] = useState(false);
 
-  console.log(processo, 'KanbanCard');
-
+  // FIX: Adicionar empresa
 
   // Animação de entrada com stagger
   useEffect(() => {

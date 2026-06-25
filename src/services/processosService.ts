@@ -35,7 +35,7 @@ export async function getProcessos(forceRefresh = false): Promise<Processo[]> {
       const parsedMeta = JSON.parse(meta);
       const resumoDoc = await getDoc(doc(db, "resumo", "dashboard"));
       const resumoData = resumoDoc.data();
-      
+
       if (resumoData && parsedMeta.ultima_atualizacao === resumoData.ultima_atualizacao) {
         console.log("✅ Cache válido - 0 leituras!");
         cacheCarregado = true;
@@ -47,24 +47,24 @@ export async function getProcessos(forceRefresh = false): Promise<Processo[]> {
   }
 
   console.log("📦 Buscando documento resumo (1 leitura)...");
-  
+
   try {
     const resumoDoc = await getDoc(doc(db, "resumo", "dashboard"));
-    
+
     if (!resumoDoc.exists()) {
       console.warn("⚠️ Documento resumo não encontrado.");
       return [];
     }
-    
+
     const resumoData = resumoDoc.data() as any;
-    
+
     const processos: Processo[] = (resumoData.processos || []).map((p: any) => ({
       id: p.id,
       protocolo: p.protocolo,
       estagio: p.estagio,
       data: p.data,
       servico: p.servico,
-      empresa: p.empresa,
+      empresa: p.nome,
       telefone: p.telefone,
       cnpj_cpf: p.cnpj_cpf,
       aba: p.aba as "andamento" | "convite" | "finalizado",
@@ -76,22 +76,22 @@ export async function getProcessos(forceRefresh = false): Promise<Processo[]> {
       } : undefined,
       isRecente: isDataRecente(p.ultima_tramitacao_data || p.data),
     }));
-    
+
     localStorage.setItem(CACHE_KEY, JSON.stringify(processos));
     localStorage.setItem(META_KEY, JSON.stringify({
       ultima_atualizacao: resumoData.ultima_atualizacao,
       version: CACHE_VERSION
     }));
-    
+
     cacheCarregado = true;
-    
+
     console.log(`📊 ${processos.length} processos carregados (1 leitura!)`);
-    
+
     const recentes = processos.filter(p => p.isRecente);
     console.log(`📊 Recentes: ${recentes.length} | Total no cache: ${processos.length}`);
-    
+
     return recentes;
-    
+
   } catch (error) {
     console.error("❌ Erro ao buscar documento resumo:", error);
     return [];
