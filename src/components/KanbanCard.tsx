@@ -25,6 +25,9 @@ export function KanbanCard({ processo, index, onHover }: KanbanCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isCardHovered, setIsCardHovered] = useState(false);
 
+  console.log(processo, 'KanbanCard');
+
+
   // Animação de entrada com stagger
   useEffect(() => {
     if (cardRef.current) {
@@ -98,7 +101,7 @@ export function KanbanCard({ processo, index, onHover }: KanbanCardProps) {
       ref={cardRef}
       className="group relative bg-white rounded-3xl transition-all duration-300"
       style={{
-        boxShadow: isCardHovered 
+        boxShadow: isCardHovered
           ? "0 20px 40px -12px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0,0,0,0.02)"
           : "0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0,0,0,0.02)",
         transform: isCardHovered ? "translateY(-4px)" : "translateY(0)",
@@ -110,7 +113,7 @@ export function KanbanCard({ processo, index, onHover }: KanbanCardProps) {
       onMouseLeave={handleMouseLeave}
     >
       {/* Barra lateral gradiente sutil */}
-      <div 
+      <div
         className="absolute left-0 top-4 bottom-4 w-[3px] rounded-full transition-all duration-300"
         style={{
           background: `linear-gradient(180deg, var(--status-color), rgba(255,255,255,0))`,
@@ -120,7 +123,7 @@ export function KanbanCard({ processo, index, onHover }: KanbanCardProps) {
       />
 
       <div className="p-6 pl-5 space-y-5">
-        
+
         {/* Topo: Protocolo (discreto) + Badges + PDF */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -164,7 +167,7 @@ export function KanbanCard({ processo, index, onHover }: KanbanCardProps) {
                 Última movimentação
               </span>
             </div>
-            
+
             <div className="flex gap-3">
               <div className="flex flex-col items-center">
                 <div className={`w-2 h-2 rounded-full ${getStatusDot(ultimaTramitacao.estagio)}`} />
@@ -207,7 +210,7 @@ export function KanbanCard({ processo, index, onHover }: KanbanCardProps) {
               </span>
             </div>
           </div>
-          
+
           <span className={`text-[10px] font-medium px-2.5 py-0.5 rounded-full ${getStatusColor(processo.estagio || "")}`}>
             {processo.estagio || "N/A"}
           </span>

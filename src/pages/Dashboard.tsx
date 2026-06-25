@@ -147,6 +147,8 @@ export function Dashboard() {
     const source = todosProcessosCache.length > 0 ? todosProcessosCache : processos;
 
     let resultado = [...source];
+    console.log(resultado, 'Dashboard');
+
 
     // 🔥 FILTRO POR TEXTO
     if (filters.search) {
@@ -225,25 +227,25 @@ export function Dashboard() {
   return (
     <>
       <Header />
-      
+
       {/* Container principal com gradientes premium e margens otimizadas */}
       <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/30 overflow-hidden">
-        
+
         {/* ========================================================= */}
         {/* CAMADA 1: GRADIENTES DE FUNDO (Profundidade)             */}
         {/* ========================================================= */}
-        
+
         {/* Gradiente superior direito - turquesa translúcido */}
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-bl from-emerald-100/20 via-teal-100/10 to-transparent rounded-full blur-3xl pointer-events-none" />
-        
+
         {/* Gradiente inferior esquerdo - verde suave */}
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-gradient-to-tr from-teal-100/15 to-emerald-100/5 rounded-full blur-3xl pointer-events-none" />
-        
+
         {/* Gradiente central - azul muito suave */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-100/5 rounded-full blur-3xl pointer-events-none" />
 
         {/* Grid técnico sutil (opacidade mínima) */}
-        <div 
+        <div
           className="absolute inset-0 pointer-events-none opacity-[0.012]"
           style={{
             backgroundImage: `
@@ -259,9 +261,9 @@ export function Dashboard() {
         {/* ========================================================= */}
         {/* CAMADA 2: CONTEÚDO PRINCIPAL                            */}
         {/* ========================================================= */}
-        
+
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12">
-          
+
           {/* Hero Dashboard - Central de Monitoramento */}
           <HeroDashboard
             totalProcessos={todosProcessosCache.length}
@@ -276,13 +278,12 @@ export function Dashboard() {
           {/* ===================================================== */}
           {/* BARRA DE STATUS E AÇÕES (Refinada)                    */}
           {/* ===================================================== */}
-          
+
           <div className="flex flex-wrap justify-between items-center gap-3 mb-6 bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-slate-100/80 shadow-sm">
             <div className="flex items-center gap-3">
               <div
-                className={`w-2 h-2 rounded-full animate-pulse ${
-                  refreshing ? "bg-amber-500" : "bg-emerald-500"
-                }`}
+                className={`w-2 h-2 rounded-full animate-pulse ${refreshing ? "bg-amber-500" : "bg-emerald-500"
+                  }`}
               />
               <div>
                 <p className="text-xs text-slate-500 flex items-center gap-2">
@@ -315,13 +316,13 @@ export function Dashboard() {
           {/* ===================================================== */}
           {/* STATS CARDS                                           */}
           {/* ===================================================== */}
-          
+
           <StatsCards resumo={resumo} total={filteredProcessos.length} />
 
           {/* ===================================================== */}
           {/* FILTER BAR                                            */}
           {/* ===================================================== */}
-          
+
           <FilterBar
             filters={filters}
             onFilterChange={setFilters}
@@ -338,7 +339,7 @@ export function Dashboard() {
           {/* ===================================================== */}
           {/* KANBAN COLUMNS                                        */}
           {/* ===================================================== */}
-          
+
           {loading ? (
             <div className="flex justify-center items-center py-20">
               <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
@@ -378,7 +379,7 @@ export function Dashboard() {
               {/* ===================================================== */}
               {/* RODAPÉ DE ESTATÍSTICAS                                */}
               {/* ===================================================== */}
-              
+
               <div className="mt-8 text-center text-xs text-slate-400 bg-white/50 backdrop-blur-sm p-3 rounded-lg border border-slate-100/60">
                 <p>
                   📊 Total no cache: {todosProcessosCache.length} processos •
@@ -401,7 +402,7 @@ export function Dashboard() {
           )}
         </div>
       </div>
-      
+
       <Footer />
     </>
   );
