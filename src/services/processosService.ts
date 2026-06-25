@@ -67,9 +67,9 @@ export async function getProcessos(forceRefresh = false): Promise<Processo[]> {
       estagio: p.estagio,
       data: p.data,
       servico: p.servico,
-      empresa: p.detalhe.nome,
-      telefone: p.telefone,
-      cnpj_cpf: p.cnpj_cpf,
+      empresa: p.detalhe.processo.nome,
+      telefone: p.detalhe.processo.telefone,
+      cnpj_cpf: p.detalhe.processo.cnpj_cpf,
       aba: p.aba as "andamento" | "convite" | "finalizado",
       extraido_em: p.extraido_em,
       ultima_tramitacao: p.ultima_tramitacao_data ? {
