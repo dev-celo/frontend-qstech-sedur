@@ -58,6 +58,9 @@ export async function getProcessos(forceRefresh = false): Promise<Processo[]> {
 
     const resumoData = resumoDoc.data() as any;
 
+    console.log(resumoData);
+
+
     const processos: Processo[] = (resumoData.processos || []).map((p: any) => ({
       id: p.id,
       protocolo: p.protocolo,
