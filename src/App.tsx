@@ -1,71 +1,81 @@
 // frontend/src/App.tsx
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { LoginPage } from './components/LoginPage';
+// import { LoginPage } from './components/LoginPage';
 import { Dashboard } from './pages/Dashboard';
 import { Sobre } from './pages/Sobre';
 import { Contato } from './pages/Contato';
 import { Localizacao } from './pages/Localizacao';
 import { ToastProvider } from './components/Toast';
 
+import { LoginClient } from './components/LoginClient';
+import { RegistrarClient } from './components/RegistrarClient';
+
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
   }
-  
+
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
-  
+
   return (
     <Routes>
       {/* Rota de login - se já estiver logado, vai para o dashboard */}
-      <Route 
-        path="/login" 
-        element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} 
+      <Route
+        path="/login"
+        element={isAuthenticated ? <Navigate to="/" replace /> : <LoginClient />}
       />
-      
+
+      {/* Rota de registro */}
+      <Route
+        path="/registro"
+        element={isAuthenticated ? <Navigate to="/" replace /> : <RegistrarClient />}
+      />
+
+
       {/* Rotas protegidas (requerem autenticação) */}
-      <Route 
-        path="/" 
+      <Route
+        path="/"
         element={
           <PrivateRoute>
             <Dashboard />
           </PrivateRoute>
-        } 
+        }
       />
-      
-      <Route 
-        path="/sobre" 
+
+      <Route
+        path="/sobre"
         element={
           <PrivateRoute>
             <Sobre />
           </PrivateRoute>
-        } 
+        }
       />
-      
-      <Route 
-        path="/contato" 
+
+      <Route
+        path="/contato"
         element={
           <PrivateRoute>
             <Contato />
           </PrivateRoute>
-        } 
+        }
       />
-      
-      <Route 
-        path="/localizacao" 
+
+      <Route
+        path="/localizacao"
         element={
           <PrivateRoute>
             <Localizacao />
           </PrivateRoute>
-        } 
+        }
       />
-      
+
       {/* Redirecionamentos */}
       <Route path="/dashboard" element={<Navigate to="/" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
