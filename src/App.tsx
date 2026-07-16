@@ -8,9 +8,9 @@ import { Contato } from './pages/Contato';
 import { Localizacao } from './pages/Localizacao';
 import { ToastProvider } from './components/Toast';
 
-import { LoginClient } from './components/LoginClient';
-import { RegistrarClient } from './components/RegistrarClient';
 import { DashboardClient } from './components/DashboardClient';
+import { Login } from './pages/Login';
+import { Registrar } from './pages/Registrar';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -30,13 +30,13 @@ function AppRoutes() {
       {/* Rota de login - se já estiver logado, vai para o dashboard */}
       <Route
         path="/login"
-        element={isAuthenticated ? <Navigate to="/" replace /> : <LoginClient />}
+        element={isAuthenticated ? <Navigate to="/" replace /> : <Login />}
       />
 
       {/* Rota de registro */}
       <Route
         path="/registro"
-        element={isAuthenticated ? <Navigate to="/" replace /> : <RegistrarClient />}
+        element={isAuthenticated ? <Navigate to="/" replace /> : <Registrar />}
       />
 
 

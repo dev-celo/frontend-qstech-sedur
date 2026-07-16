@@ -1,13 +1,16 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { ArrowRight, KeyRound, UserPlus, Building2, Eye, EyeOff } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowRight, KeyRound, UserPlus, Building2, Eye, EyeOff, Loader2 } from "lucide-react";
+import { loginClient, requestError } from "@/services/clientApi";
 
-// TODO: ADICIONAR CHAMADA PARA AS ROTAS DE LOGIN DOS CLIENTES
+export function Login() {
+  const navigate = useNavigate()
 
-export function LoginClient() {
   const [cnpj, setCnpj] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const formatCnpj = (value: string) => {
     const cleaned = value.replace(/[^a-zA-Z0-9]/g, "").slice(0, 14);
@@ -25,6 +28,37 @@ export function LoginClient() {
 
     return formatted;
   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+
+    if (cnpj.length < 11 || cnpj.length > 18) {
+      setError("CPF/CNPJ inválido");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Senha deve ter no mínimo 8 caracteres");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const data = await loginClient(cnpj, password);
+
+      if (data.token) {
+        localStorage.setItem("client_token", data.token);
+      }
+
+      navigate("/client-dashboard");
+    } catch (err) {
+      setError(err instanceof requestError ? err.message : "Não foi possível conectar ao servidor. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-gray-200 px-4">
       <div className="w-full max-w-md">
@@ -49,7 +83,14 @@ export function LoginClient() {
           </div>
 
           {/* Form */}
-          <form className="space-y-5 py-4 px-8">
+          <form onSubmit={handleSubmit} className="space-y-5 py-4 px-8">
+
+            {error && (
+              <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-600">
+                {error}
+              </div>
+            )}
+
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700">
                 CNPJ
@@ -100,14 +141,15 @@ export function LoginClient() {
             </div>
             <button
               className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-green-600 font-medium text-white transition hover:bg-green-700"
+              disabled={loading}
             >
-              <ArrowRight size={18} />
-              Entrar
+              {loading ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={18} />}
+              {loading ? "Entrando..." : "Entrar"}
             </button>
 
             <div className="flex justify-between text-sm">
               <Link
-                to="/registrar"
+                to="/registro"
                 className="flex items-center gap-2 text-green-700 hover:underline"
               >
                 <UserPlus size={16} />

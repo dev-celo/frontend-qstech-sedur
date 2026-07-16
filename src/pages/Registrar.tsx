@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Building2,
   ShieldCheck,
@@ -7,15 +8,21 @@ import {
   Eye,
   CheckCircle2,
   UserPlus,
+  Loader2,
 } from "lucide-react";
+import {
+  registroClient,
+  gerarCodigoClient,
+  validarCodigoClient,
+  requestError
+} from '../services/clientApi.ts'
+import { formatCpfCnpj, cpfCnpjValido } from '../utils/formatCpfCnpj'
 
 const STEP_META = [{ label: "CNPJ" }, { label: "Código" }, { label: "Senha" }];
 
-// TODO: DESABILITAR BOTÃO ENQUANTO CNPJ NÃO ESTIVER DIGITADO
-// TODO: ADICIONAR CHAMADA PARA GERAR CODIGO E DESABILITAR BOTÃO ENQUANTO NÃO VALIDA CODIGO
-// TODO: ADICIONAR CHAMADA PARA CRIAR CONTA
+export function Registrar() {
+  const navigate = useNavigate();
 
-export function RegistrarClient() {
   const [step, setStep] = useState(1);
   const [cnpj, setCnpj] = useState("");
   const [codigo, setCodigo] = useState("");
@@ -24,22 +31,8 @@ export function RegistrarClient() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const formatCnpj = (value: string) => {
-    const cleaned = value.replace(/[^a-zA-Z0-9]/g, "").slice(0, 14);
-
-    let formatted = "";
-
-    for (let i = 0; i < cleaned.length; i++) {
-      if (i === 2) formatted += ".";
-      if (i === 5) formatted += ".";
-      if (i === 8) formatted += "/";
-      if (i === 12) formatted += "-";
-
-      formatted += cleaned[i];
-    }
-
-    return formatted;
-  };
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const passwordsMismatch =
     confirmPassword.length > 0 && password !== confirmPassword;
@@ -50,21 +43,79 @@ export function RegistrarClient() {
     password === confirmPassword;
 
   const stepTitles: Record<number, string> = {
-    1: "Informe seu CNPJ",
+    1: "Informe seu CNPJ ou CPF",
     2: "Valide seu código",
     3: "Crie sua senha",
   };
 
   const stepSubtitles: Record<number, string> = {
-    1: "Digite o CNPJ da sua empresa.",
+    1: "Digite o CNPJ da sua empresa ou o CPF do responsável.",
     2: "Digite o código enviado para o e-mail cadastrado.",
     3: "Defina uma senha segura para acessar o sistema.",
+  };
+
+  const cnpjValido = cpfCnpjValido(cnpj);
+
+  const handleGerarCodigo = async () => {
+    setError(null);
+    if (!cnpjValido) {
+      setError("CPF/CNPJ inválido");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await gerarCodigoClient(cnpj);
+      setStep(2);
+    } catch (err) {
+      if (err instanceof requestError && err.status === 409) {
+        setError("Já existe uma conta cadastrada com esse CNPJ/CPF. Tente fazer login.");
+      } else {
+        setError(err instanceof requestError ? err.message : "Não foi possível gerar o código.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleValidarCodigo = async () => {
+    setError(null);
+    if (codigo.length !== 6) {
+      setError("Digite o código de 6 dígitos");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await validarCodigoClient(cnpj, codigo, 'registro');
+      setStep(3);
+    } catch (err) {
+      setError(err instanceof requestError ? err.message : "Código inválido.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegistrar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!canSubmit) return;
+
+    setLoading(true);
+    try {
+      await registroClient(cnpj, password);
+      navigate("/login");
+    } catch (err) {
+      setError(err instanceof requestError ? err.message : "Não foi possível criar a conta.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-gray-200 px-4 py-10">
       <div className="w-full max-w-md">
-        {/* Page header + overall stepper */}
         <div className="mb-6 text-center">
           <h1 className="text-3xl font-bold text-gray-800">Crie sua conta</h1>
           <p className="mt-2 text-sm text-gray-600">
@@ -123,7 +174,14 @@ export function RegistrarClient() {
             </p>
           </div>
 
-          <form className="space-y-5 px-8 py-5">
+          <form onSubmit={handleRegistrar} className="space-y-5 px-8 py-5">
+
+            {error && (
+              <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm text-center text-red-600">
+                {error}
+              </div>
+            )}
+
             {step === 1 && (
               <>
                 <div>
@@ -140,7 +198,7 @@ export function RegistrarClient() {
                     <input
                       type="text"
                       value={cnpj}
-                      onChange={(e) => setCnpj(formatCnpj(e.target.value))}
+                      onChange={(e) => setCnpj(formatCpfCnpj(e.target.value))}
                       placeholder="00.000.000/0000-00"
                       className="h-12 w-full rounded-lg border border-gray-300 px-4 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-500"
                     />
@@ -160,11 +218,12 @@ export function RegistrarClient() {
 
                 <button
                   type="button"
-                  onClick={() => setStep(2)}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-green-600 font-medium text-white transition hover:bg-green-700"
+                  onClick={handleGerarCodigo}
+                  disabled={!cnpjValido || loading}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-green-600 disabled:bg-slate-500 font-medium text-white transition hover:bg-green-700"
                 >
-                  <CheckCircle2 size={18} />
-                  Continuar
+                  {loading ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
+                  {loading ? "Enviando..." : "Continuar"}
                 </button>
               </>
             )}
@@ -211,11 +270,12 @@ export function RegistrarClient() {
 
                   <button
                     type="button"
-                    onClick={() => setStep(3)}
-                    className="flex h-12 flex-[1.5] items-center justify-center gap-2 rounded-lg bg-green-600 font-medium text-white transition hover:bg-green-700"
+                    onClick={handleValidarCodigo}
+                    disabled={codigo.length !== 6 || loading}
+                    className="flex h-12 flex-[1.5] items-center justify-center gap-2 rounded-lg bg-green-600 disabled:bg-slate-500 font-medium text-white transition hover:bg-green-700"
                   >
-                    <CheckCircle2 size={18} />
-                    Validar e continuar
+                    {loading ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
+                    {loading ? "Validando..." : "Validar e continuar"}
                   </button>
                 </div>
               </>
@@ -299,11 +359,11 @@ export function RegistrarClient() {
 
                   <button
                     type="submit"
-                    disabled={!canSubmit}
+                    disabled={!canSubmit || loading || password.length < 8}
                     className="flex h-12 flex-[1.6] items-center justify-center gap-2 rounded-lg bg-green-600 font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:hover:bg-gray-300"
                   >
-                    <UserPlus size={18} />
-                    Criar conta
+                    {loading ? <Loader2 size={18} className="animate-spin" /> : <UserPlus size={18} />}
+                    {loading ? "Criando..." : "Criar conta"}
                   </button>
                 </div>
               </>

@@ -1,3 +1,33 @@
+// Types do client
+export type clientPayload = {
+  cnpj_cpf: string;
+  senha: string;
+};
+
+// Resposta do login
+export type LoginResponse = {
+  token?: string;
+  cliente?: {
+    cnpj_cpf: string;
+    nome: string;
+    email: string;
+  };
+};
+
+// Resposta do registro
+
+// Types do gerar codigo
+export type gerarCodigoPayload = { cnpj_cpf: string, proposito: string }
+
+// Types do validar codigo
+export type validarCodigoPayload = {
+  cnpj_cpf: string,
+  codigo: string,
+  proposito: string
+}
+
+
+
 // Dados da empresa exibidos no HeaderClient
 export interface EmpresaInfo {
   empresa: string;
