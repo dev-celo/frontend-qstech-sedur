@@ -1,36 +1,33 @@
-import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import {
-  fetchProcessos,
-  fetchProcessoAndamento,
-  fetchProcessoTramitacoes,
-} from "../services/apiMock.ts";
 import type { ProcessoResumo, ProcessoDetalhes } from "../types/clientTypes.ts";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 import { CardClient } from "./CardClient";
 import { DetalhesProcessoClient } from "./DetalhesProcessoClient";
 
-interface ProcessosClientProps {
-  cnpj: string;
-}
+import {
+  fetchProcessoClient,
+  fetchProcessosClient,
+  fetchTramitacoesClient,
+  requestError
+} from "@/services/clientApi.ts";
 
 // TODO: Tirar Loading ao trocar a paginação
 
-export function ProcessosClient({ cnpj }: ProcessosClientProps) {
-  const [processos, setProcessos] = useState<ProcessoResumo[]>([]);
+const ITENS_POR_PAGINA = 5;
+
+export function ProcessosClient() {
+  const [todosProcessos, setTodosProcessos] = useState<ProcessoResumo[]>([]);
   const [paginaAtual, setPaginaAtual] = useState(1);
-  const [totalPaginas, setTotalPaginas] = useState(1);
-  const [totalProcessos, setTotalProcessos] = useState(0);
   const [carregandoLista, setCarregandoLista] = useState(true);
   const [erroLista, setErroLista] = useState<string | null>(null);
 
-  const [processoSelecionadoId, setProcessoSelecionadoId] = useState<
-    string | null
-  >(null);
+  const [processoSelecionadoId, setProcessoSelecionadoId] = useState<string | null>(null);
+
   const [detalhes, setDetalhes] = useState<ProcessoDetalhes | null>(null);
   const [carregandoDetalhes, setCarregandoDetalhes] = useState(false);
   const [erroDetalhes, setErroDetalhes] = useState<string | null>(null);
 
-  // Busca a lista de processos sempre que o cnpj ou a página mudarem
   useEffect(() => {
     let ativo = true;
 
@@ -39,28 +36,34 @@ export function ProcessosClient({ cnpj }: ProcessosClientProps) {
       setErroLista(null);
 
       try {
-        const resposta = await fetchProcessos(cnpj, paginaAtual);
+        const resposta = await fetchProcessosClient();
         if (!ativo) return;
+        const processosCarregados = resposta.processos ?? [];
+        setTodosProcessos(processosCarregados);
 
-        setProcessos(resposta.processos);
-        setTotalPaginas(resposta.totalPaginas);
-        setTotalProcessos(resposta.totalProcessos);
+        if (processosCarregados.length > 0) {
+          await handleSelecionarProcesso(processosCarregados[0].id);
+        }
       } catch (err) {
         if (!ativo) return;
-        setErroLista("Não foi possível carregar os processos.");
+        setErroLista(err instanceof requestError ? err.message : "Não foi possível carregar os processos.");
       } finally {
         if (ativo) setCarregandoLista(false);
       }
     }
 
     carregarProcessos();
+    return () => { ativo = false };
+  }, []);
 
-    return () => {
-      ativo = false;
-    };
-  }, [cnpj, paginaAtual]);
+  const totalProcessos = todosProcessos.length;
+  const totalPaginas = Math.max(1, Math.ceil(totalProcessos / ITENS_POR_PAGINA));
 
-  // Ao selecionar um processo, busca Andamento + Tramitações em paralelo (eager)
+  const processos = useMemo(() => {
+    const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
+    return todosProcessos.slice(inicio, inicio + ITENS_POR_PAGINA)
+  }, [todosProcessos, paginaAtual])
+
   const handleSelecionarProcesso = async (processoId: string) => {
     setProcessoSelecionadoId(processoId);
     setCarregandoDetalhes(true);
@@ -69,21 +72,22 @@ export function ProcessosClient({ cnpj }: ProcessosClientProps) {
 
     try {
       const [andamento, tramitacoes] = await Promise.all([
-        fetchProcessoAndamento(processoId),
-        fetchProcessoTramitacoes(processoId),
+        fetchProcessoClient(processoId),
+        fetchTramitacoesClient(processoId),
       ]);
-
       setDetalhes({ andamento, tramitacoes });
     } catch (err) {
-      setErroDetalhes("Não foi possível carregar os detalhes do processo.");
+      setErroDetalhes(err instanceof requestError ? err.message : "Não foi possível carregar os detalhes do processo.");
     } finally {
       setCarregandoDetalhes(false);
     }
   };
 
+
+  // console.log(detalhes, 'detalhes');
+
   return (
     <div className="grid h-full min-h-0 grid-cols-1 gap-6 lg:grid-cols-5">
-      {/* Coluna: Meus processos */}
       <div className="min-h-0 lg:col-span-2">
         <div className="flex h-full min-h-0 flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="shrink-0 text-lg font-bold text-gray-800">

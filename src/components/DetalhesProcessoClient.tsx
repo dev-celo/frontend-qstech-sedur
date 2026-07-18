@@ -18,6 +18,8 @@ export function DetalhesProcessoClient({
   erro,
 }: DetalhesProcessoClientProps) {
   const [aba, setAba] = useState<Aba>("andamento");
+  console.log(detalhes?.tramitacoes);
+
 
   return (
     <div className="flex h-full min-h-0 flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -36,7 +38,7 @@ export function DetalhesProcessoClient({
             }`}
         >
           <TrendingUp size={16} />
-          Andamento
+          Processo
         </button>
 
         <button

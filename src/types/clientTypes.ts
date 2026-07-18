@@ -81,15 +81,7 @@ export interface Tramitacao {
   estagio: string;
 }
 
-// Modelo completo da aba "Tramitações"
-export interface ProcessoTramitacoes {
-  processo_id: string;
-  protocolo: string;
-  cnpj_cpf: string;
-  empresa: string;
-  tramitacoes: Tramitacao[];
-  ultima_atualizacao: string;
-}
+export type ProcessoTramitacoes = Tramitacao[];
 
 // Pacote de dados usado pelo DetalhesProcessoClient (Andamento + Tramitações
 // já resolvidos, buscados de forma eager assim que um processo é selecionado)

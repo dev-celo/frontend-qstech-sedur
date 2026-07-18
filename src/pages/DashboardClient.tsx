@@ -1,19 +1,19 @@
 import { useEffect, useState } from "react";
 import type { EmpresaInfo } from "../types/clientTypes.ts";
-import { HeaderClient } from "./HeaderClient";
-import { ProcessosClient } from "./ProcessosClient";
 
-import { fetchEmpresaInfo } from "../services/apiMock.ts";
+import { fetchMeClient } from "@/services/clientApi.ts";
+import { HeaderClient } from "@/components/HeaderClient.tsx";
+import { ProcessosClient } from "@/components/ProcessosClient.tsx";
+import { useNavigate } from "react-router-dom";
+import { clearToken } from "@/services/clientApi.ts";
 
-interface DashboardClientProps {
-  // TODO: no fluxo real, esse cnpj deve vir da sessão/autenticação do usuário
-  cnpj: string;
-}
 
-export function DashboardClient({ cnpj }: DashboardClientProps) {
+export function DashboardClient() {
   const [empresaInfo, setEmpresaInfo] = useState<EmpresaInfo | null>(null);
   const [carregandoEmpresa, setCarregandoEmpresa] = useState(true);
   const [erroEmpresa, setErroEmpresa] = useState<string | null>(null);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     let ativo = true;
@@ -23,8 +23,15 @@ export function DashboardClient({ cnpj }: DashboardClientProps) {
       setErroEmpresa(null);
 
       try {
-        const dados = await fetchEmpresaInfo(cnpj);
-        if (ativo) setEmpresaInfo(dados);
+        const dados = await fetchMeClient();
+        if (ativo) {
+          setEmpresaInfo({
+            empresa: dados.nome,
+            cnpj_cpf: dados.cnpj_cpf,
+            email: dados.email,
+            telefone: dados.telefone ?? "",
+          });
+        }
       } catch (err) {
         if (ativo) setErroEmpresa("Não foi possível carregar os dados da empresa.");
       } finally {
@@ -37,12 +44,13 @@ export function DashboardClient({ cnpj }: DashboardClientProps) {
     return () => {
       ativo = false;
     };
-  }, [cnpj]);
+  }, []);
 
   const handleLogout = () => {
-    // TODO: integrar com o fluxo real de logout (limpar sessão/token e redirecionar para o login)
-    console.log("logout");
+    clearToken();
+    navigate("/login");
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-gray-200 px-4 py-8">
@@ -69,7 +77,7 @@ export function DashboardClient({ cnpj }: DashboardClientProps) {
               onLogout={handleLogout}
             />
 
-            <ProcessosClient cnpj={cnpj} />
+            <ProcessosClient />
           </>
         )}
 
@@ -80,4 +88,3 @@ export function DashboardClient({ cnpj }: DashboardClientProps) {
     </div>
   );
 }
-
