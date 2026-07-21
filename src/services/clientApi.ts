@@ -7,6 +7,8 @@ import type {
   redefinirSenhaPayload,
 } from "../types/clientTypes.ts";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 // ERROR HANDLER
 export class requestError extends Error {
   status: number;
@@ -46,7 +48,7 @@ async function post(
   body: clientPayload | gerarCodigoPayload | validarCodigoPayload,
   errorMessage: string
 ) {
-  const response = await fetch(path, {
+  const response = await fetch(`${API_URL}${path}`, {
     method: 'POST',
     headers: {
       "Content-Type": "application/json",
@@ -92,7 +94,7 @@ export async function validarCodigoClient(cnpj_cpf: string, codigo: string, prop
 
 // ROTA GET
 async function get(path: string, errorMessage: string) {
-  const response = await fetch(path, {
+  const response = await fetch(`${API_URL}${path}`, {
     method: 'GET',
     headers: {
       "Content-Type": "application/json",
@@ -131,7 +133,7 @@ async function patch(
   body: clientPayload | gerarCodigoPayload | validarCodigoPayload | redefinirSenhaPayload,
   errorMessage: string
 ) {
-  const response = await fetch(path, {
+  const response = await fetch(`${API_URL}${path}`, {
     method: 'PATCH',
     headers: {
       "Content-Type": "application/json",

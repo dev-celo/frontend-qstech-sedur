@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   Building2,
   ShieldCheck,
@@ -10,109 +9,26 @@ import {
   UserPlus,
   Loader2,
   Home,
+  RefreshCw,
 } from "lucide-react";
-import {
-  registroClient,
-  gerarCodigoClient,
-  validarCodigoClient,
-  requestError
-} from '../services/clientApi.ts'
-import { formatCpfCnpj, cpfCnpjValido } from '../utils/formatCpfCnpj'
+import { formatCpfCnpj } from '../utils/formatCpfCnpj'
 
-const STEP_META = [{ label: "CNPJ" }, { label: "Código" }, { label: "Senha" }];
+import { useCliente, STEP_META, stepTitles, stepSubtitles } from '../hooks/useCliente.ts'
 
 export function Registrar() {
-  const navigate = useNavigate();
-
-  const [step, setStep] = useState(1);
-  const [cnpj, setCnpj] = useState("");
-  const [codigo, setCodigo] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const passwordsMismatch =
-    confirmPassword.length > 0 && password !== confirmPassword;
-
-  const canSubmit =
-    password.length > 0 &&
-    confirmPassword.length > 0 &&
-    password === confirmPassword;
-
-  const stepTitles: Record<number, string> = {
-    1: "Informe seu CNPJ ou CPF",
-    2: "Valide seu código",
-    3: "Crie sua senha",
-  };
-
-  const stepSubtitles: Record<number, string> = {
-    1: "Digite o CNPJ da sua empresa ou o CPF do responsável.",
-    2: "Digite o código enviado para o e-mail cadastrado.",
-    3: "Defina uma senha segura para acessar o sistema.",
-  };
-
-  const cnpjValido = cpfCnpjValido(cnpj);
-
-  const handleGerarCodigo = async () => {
-    setError(null);
-    if (!cnpjValido) {
-      setError("CPF/CNPJ inválido");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await gerarCodigoClient(cnpj, 'registro');
-      setStep(2);
-    } catch (err) {
-      if (err instanceof requestError && err.status === 409) {
-        setError("Já existe uma conta cadastrada com esse CNPJ/CPF. Tente fazer login.");
-      } else {
-        setError(err instanceof requestError ? err.message : "Não foi possível gerar o código.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const handleValidarCodigo = async () => {
-    setError(null);
-    if (codigo.length !== 6) {
-      setError("Digite o código de 6 dígitos");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await validarCodigoClient(cnpj, codigo, 'registro');
-      setStep(3);
-    } catch (err) {
-      setError(err instanceof requestError ? err.message : "Código inválido.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRegistrar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!canSubmit) return;
-
-    setLoading(true);
-    try {
-      await registroClient(cnpj, password);
-      navigate("/login");
-    } catch (err) {
-      setError(err instanceof requestError ? err.message : "Não foi possível criar a conta.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    step, setStep,
+    cnpj, setCnpj,
+    codigo, setCodigo,
+    password, setPassword,
+    confirmPassword, setConfirmPassword,
+    showPassword, setShowPassword,
+    showConfirmPassword, setShowConfirmPassword,
+    loading, error,
+    reenviando, reenviado,
+    passwordsMismatch, canSubmit, cnpjValido,
+    handleGerarCodigo, handleReenviarCodigo, handleValidarCodigo, handleRegistrar,
+  } = useCliente('registro', "Já existe uma conta cadastrada com esse CNPJ/CPF. Tente fazer login.");
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-gray-200 px-4 py-10">
@@ -265,6 +181,26 @@ export function Registrar() {
                     </p>
                   </div>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={handleReenviarCodigo}
+                  disabled={reenviando || loading}
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {reenviando ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <RefreshCw size={16} />
+                  )}
+                  {reenviando ? "Reenviando..." : "Reenviar código"}
+                </button>
+
+                {reenviado && !reenviando && (
+                  <p className="text-center text-xs text-green-600">
+                    Código reenviado com sucesso.
+                  </p>
+                )}
 
                 <div className="flex gap-3">
                   <button

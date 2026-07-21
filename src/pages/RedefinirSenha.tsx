@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   KeyRound,
   ShieldCheck,
@@ -9,109 +8,26 @@ import {
   CheckCircle2,
   Loader2,
   Home,
+  RefreshCw,
 } from "lucide-react";
-import {
-  validarCodigoClient,
-  requestError,
-  gerarCodigoClient,
-  redefinirSenhaClient
-} from '../services/clientApi.ts'
-import { formatCpfCnpj, cpfCnpjValido } from '../utils/formatCpfCnpj'
+import { formatCpfCnpj } from '../utils/formatCpfCnpj'
 
-const STEP_META = [{ label: "CNPJ" }, { label: "Código" }, { label: "Nova senha" }];
+import { useCliente, STEP_META, stepTitles, stepSubtitles } from '../hooks/useCliente.ts'
 
 export function RedefinirSenha() {
-  const navigate = useNavigate();
-
-  const [step, setStep] = useState(1);
-  const [cnpj, setCnpj] = useState("");
-  const [codigo, setCodigo] = useState("");
-  const [novaSenha, setNovaSenha] = useState("");
-  const [confirmarNovaSenha, setConfirmarNovaSenha] = useState("");
-  const [showNovaSenha, setShowNovaSenha] = useState(false);
-  const [showConfirmarNovaSenha, setShowConfirmarNovaSenha] = useState(false);
-
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const senhasNaoConferem =
-    confirmarNovaSenha.length > 0 && novaSenha !== confirmarNovaSenha;
-
-  const canSubmit =
-    novaSenha.length > 0 &&
-    confirmarNovaSenha.length > 0 &&
-    novaSenha === confirmarNovaSenha;
-
-  const stepTitles: Record<number, string> = {
-    1: "Informe seu CNPJ ou CPF",
-    2: "Valide seu código",
-    3: "Crie sua nova senha",
-  };
-
-  const stepSubtitles: Record<number, string> = {
-    1: "Digite o CNPJ da sua empresa ou o CPF do responsável.",
-    2: "Digite o código enviado para o e-mail cadastrado.",
-    3: "Defina uma nova senha segura para acessar o sistema.",
-  };
-
-  const cnpjValido = cpfCnpjValido(cnpj);
-
-  const handleGerarCodigo = async () => {
-    setError(null);
-    if (!cnpjValido) {
-      setError("CPF/CNPJ inválido");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await gerarCodigoClient(cnpj, 'recuperacao_senha');
-      setStep(2);
-    } catch (err) {
-      if (err instanceof requestError && err.status === 404) {
-        setError("Não encontramos uma conta cadastrada com esse CNPJ/CPF.");
-      } else {
-        setError(err instanceof requestError ? err.message : "Não foi possível gerar o código.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const handleValidarCodigo = async () => {
-    setError(null);
-    if (codigo.length !== 6) {
-      setError("Digite o código de 6 dígitos");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await validarCodigoClient(cnpj, codigo, 'recuperacao_senha');
-      setStep(3);
-    } catch (err) {
-      setError(err instanceof requestError ? err.message : "Código inválido.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRedefinirSenha = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!canSubmit) return;
-
-    setLoading(true);
-    try {
-      await redefinirSenhaClient(cnpj, novaSenha);
-      navigate("/");
-    } catch (err) {
-      setError(err instanceof requestError ? err.message : "Não foi possível redefinir a senha.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    step, setStep,
+    cnpj, setCnpj,
+    codigo, setCodigo,
+    password, setPassword,
+    confirmPassword, setConfirmPassword,
+    showPassword, setShowPassword,
+    showConfirmPassword, setShowConfirmPassword,
+    loading, error,
+    reenviando, reenviado,
+    passwordsMismatch, canSubmit, cnpjValido,
+    handleGerarCodigo, handleReenviarCodigo, handleValidarCodigo, handleRedefinirSenha
+  } = useCliente('recuperacao_senha', "Não encontramos uma conta cadastrada com esse CNPJ/CPF.");
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-gray-200 px-4 py-10">
@@ -266,6 +182,26 @@ export function RedefinirSenha() {
                   </div>
                 </div>
 
+                <button
+                  type="button"
+                  onClick={handleReenviarCodigo}
+                  disabled={reenviando || loading}
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {reenviando ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <RefreshCw size={16} />
+                  )}
+                  {reenviando ? "Reenviando..." : "Reenviar código"}
+                </button>
+
+                {reenviado && !reenviando && (
+                  <p className="text-center text-xs text-green-600">
+                    Código reenviado com sucesso.
+                  </p>
+                )}
+
                 <div className="flex gap-3">
                   <button
                     type="button"
@@ -298,19 +234,19 @@ export function RedefinirSenha() {
 
                   <div className="relative">
                     <input
-                      type={showNovaSenha ? "text" : "password"}
-                      value={novaSenha}
-                      onChange={(e) => setNovaSenha(e.target.value)}
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       placeholder="Digite sua nova senha"
                       className="h-12 w-full rounded-lg border border-gray-300 px-4 pr-11 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-500"
                     />
 
                     <button
                       type="button"
-                      onClick={() => setShowNovaSenha(!showNovaSenha)}
+                      onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-green-600"
                     >
-                      {showNovaSenha ? <EyeOff size={18} /> : <Eye size={18} />}
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
@@ -322,12 +258,12 @@ export function RedefinirSenha() {
 
                   <div className="relative">
                     <input
-                      type={showConfirmarNovaSenha ? "text" : "password"}
-                      value={confirmarNovaSenha}
-                      onChange={(e) => setConfirmarNovaSenha(e.target.value)}
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Confirme sua nova senha"
                       className={`h-12 w-full rounded-lg border px-4 pr-11 outline-none transition focus:ring-2
-                        ${senhasNaoConferem
+                        ${passwordsMismatch
                           ? "border-red-400 focus:border-red-500 focus:ring-red-200"
                           : "border-gray-300 focus:border-green-500 focus:ring-green-500"
                         }`}
@@ -336,11 +272,11 @@ export function RedefinirSenha() {
                     <button
                       type="button"
                       onClick={() =>
-                        setShowConfirmarNovaSenha(!showConfirmarNovaSenha)
+                        setShowConfirmPassword(!showConfirmPassword)
                       }
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-green-600"
                     >
-                      {showConfirmarNovaSenha ? (
+                      {showConfirmPassword ? (
                         <EyeOff size={18} />
                       ) : (
                         <Eye size={18} />
@@ -348,7 +284,7 @@ export function RedefinirSenha() {
                     </button>
                   </div>
 
-                  {senhasNaoConferem && (
+                  {passwordsMismatch && (
                     <p className="mt-2 text-xs text-red-600">
                       As senhas não coincidem.
                     </p>
@@ -367,7 +303,7 @@ export function RedefinirSenha() {
 
                   <button
                     type="submit"
-                    disabled={!canSubmit || loading || novaSenha.length < 8}
+                    disabled={!canSubmit || loading || password.length < 8}
                     className="flex h-12 flex-[1.6] items-center justify-center gap-2 rounded-lg bg-green-600 font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:hover:bg-gray-300"
                   >
                     {loading ? <Loader2 size={18} className="animate-spin" /> : <KeyRound size={18} />}
@@ -386,5 +322,3 @@ export function RedefinirSenha() {
     </div>
   );
 }
-
-
