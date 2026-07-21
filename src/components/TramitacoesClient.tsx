@@ -1,6 +1,7 @@
 import { MapPin, Calendar } from "lucide-react";
 import type { ProcessoTramitacoes } from "../types/clientTypes.ts";
 import { getStatusStyle } from "../utils/statusStyles.ts";
+import { ParecerViewer } from "./ParecerViewer.tsx";
 
 interface TramitacoesClientProps {
   tramitacoes: ProcessoTramitacoes;
@@ -53,6 +54,7 @@ export function TramitacoesClient({ tramitacoes }: TramitacoesClientProps) {
                   <MapPin size={14} className="mt-0.5 shrink-0 text-gray-400" />
                   {item.destino}
                 </p>
+                <ParecerViewer parecer={item.parecer} />
               </li>
             );
           })}

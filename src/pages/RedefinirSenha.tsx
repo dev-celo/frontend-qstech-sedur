@@ -1,58 +1,57 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Building2,
+  KeyRound,
   ShieldCheck,
   ArrowLeft,
   EyeOff,
   Eye,
   CheckCircle2,
-  UserPlus,
   Loader2,
   Home,
 } from "lucide-react";
 import {
-  registroClient,
-  gerarCodigoClient,
   validarCodigoClient,
-  requestError
+  requestError,
+  gerarCodigoClient,
+  redefinirSenhaClient
 } from '../services/clientApi.ts'
 import { formatCpfCnpj, cpfCnpjValido } from '../utils/formatCpfCnpj'
 
-const STEP_META = [{ label: "CNPJ" }, { label: "Código" }, { label: "Senha" }];
+const STEP_META = [{ label: "CNPJ" }, { label: "Código" }, { label: "Nova senha" }];
 
-export function Registrar() {
+export function RedefinirSenha() {
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
   const [cnpj, setCnpj] = useState("");
   const [codigo, setCodigo] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [novaSenha, setNovaSenha] = useState("");
+  const [confirmarNovaSenha, setConfirmarNovaSenha] = useState("");
+  const [showNovaSenha, setShowNovaSenha] = useState(false);
+  const [showConfirmarNovaSenha, setShowConfirmarNovaSenha] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const passwordsMismatch =
-    confirmPassword.length > 0 && password !== confirmPassword;
+  const senhasNaoConferem =
+    confirmarNovaSenha.length > 0 && novaSenha !== confirmarNovaSenha;
 
   const canSubmit =
-    password.length > 0 &&
-    confirmPassword.length > 0 &&
-    password === confirmPassword;
+    novaSenha.length > 0 &&
+    confirmarNovaSenha.length > 0 &&
+    novaSenha === confirmarNovaSenha;
 
   const stepTitles: Record<number, string> = {
     1: "Informe seu CNPJ ou CPF",
     2: "Valide seu código",
-    3: "Crie sua senha",
+    3: "Crie sua nova senha",
   };
 
   const stepSubtitles: Record<number, string> = {
     1: "Digite o CNPJ da sua empresa ou o CPF do responsável.",
     2: "Digite o código enviado para o e-mail cadastrado.",
-    3: "Defina uma senha segura para acessar o sistema.",
+    3: "Defina uma nova senha segura para acessar o sistema.",
   };
 
   const cnpjValido = cpfCnpjValido(cnpj);
@@ -66,11 +65,11 @@ export function Registrar() {
 
     setLoading(true);
     try {
-      await gerarCodigoClient(cnpj, 'registro');
+      await gerarCodigoClient(cnpj, 'recuperacao_senha');
       setStep(2);
     } catch (err) {
-      if (err instanceof requestError && err.status === 409) {
-        setError("Já existe uma conta cadastrada com esse CNPJ/CPF. Tente fazer login.");
+      if (err instanceof requestError && err.status === 404) {
+        setError("Não encontramos uma conta cadastrada com esse CNPJ/CPF.");
       } else {
         setError(err instanceof requestError ? err.message : "Não foi possível gerar o código.");
       }
@@ -88,7 +87,7 @@ export function Registrar() {
 
     setLoading(true);
     try {
-      await validarCodigoClient(cnpj, codigo, 'registro');
+      await validarCodigoClient(cnpj, codigo, 'recuperacao_senha');
       setStep(3);
     } catch (err) {
       setError(err instanceof requestError ? err.message : "Código inválido.");
@@ -97,7 +96,7 @@ export function Registrar() {
     }
   };
 
-  const handleRegistrar = async (e: React.FormEvent) => {
+  const handleRedefinirSenha = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -105,10 +104,10 @@ export function Registrar() {
 
     setLoading(true);
     try {
-      await registroClient(cnpj, password);
-      navigate("/login");
+      await redefinirSenhaClient(cnpj, novaSenha);
+      navigate("/");
     } catch (err) {
-      setError(err instanceof requestError ? err.message : "Não foi possível criar a conta.");
+      setError(err instanceof requestError ? err.message : "Não foi possível redefinir a senha.");
     } finally {
       setLoading(false);
     }
@@ -123,11 +122,12 @@ export function Registrar() {
         <Home size={18} />
         Início
       </Link>
+
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold text-gray-800">Crie sua conta</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Redefinir senha</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Siga os passos abaixo para criar sua conta de acesso
+            Siga os passos abaixo para redefinir sua senha de acesso
           </p>
 
           <div className="mt-6 flex items-center justify-center">
@@ -182,7 +182,7 @@ export function Registrar() {
             </p>
           </div>
 
-          <form onSubmit={handleRegistrar} className="space-y-5 px-8 py-5">
+          <form onSubmit={handleRedefinirSenha} className="space-y-5 px-8 py-5">
 
             {error && (
               <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm text-center text-red-600">
@@ -198,7 +198,7 @@ export function Registrar() {
                   </label>
 
                   <div className="relative">
-                    <Building2
+                    <KeyRound
                       size={18}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                     />
@@ -293,41 +293,41 @@ export function Registrar() {
               <>
                 <div>
                   <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Senha
+                    Nova senha
                   </label>
 
                   <div className="relative">
                     <input
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Digite sua senha"
+                      type={showNovaSenha ? "text" : "password"}
+                      value={novaSenha}
+                      onChange={(e) => setNovaSenha(e.target.value)}
+                      placeholder="Digite sua nova senha"
                       className="h-12 w-full rounded-lg border border-gray-300 px-4 pr-11 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-500"
                     />
 
                     <button
                       type="button"
-                      onClick={() => setShowPassword(!showPassword)}
+                      onClick={() => setShowNovaSenha(!showNovaSenha)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-green-600"
                     >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      {showNovaSenha ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Confirmar senha
+                    Confirmar nova senha
                   </label>
 
                   <div className="relative">
                     <input
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirme sua senha"
+                      type={showConfirmarNovaSenha ? "text" : "password"}
+                      value={confirmarNovaSenha}
+                      onChange={(e) => setConfirmarNovaSenha(e.target.value)}
+                      placeholder="Confirme sua nova senha"
                       className={`h-12 w-full rounded-lg border px-4 pr-11 outline-none transition focus:ring-2
-                        ${passwordsMismatch
+                        ${senhasNaoConferem
                           ? "border-red-400 focus:border-red-500 focus:ring-red-200"
                           : "border-gray-300 focus:border-green-500 focus:ring-green-500"
                         }`}
@@ -336,11 +336,11 @@ export function Registrar() {
                     <button
                       type="button"
                       onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
+                        setShowConfirmarNovaSenha(!showConfirmarNovaSenha)
                       }
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-green-600"
                     >
-                      {showConfirmPassword ? (
+                      {showConfirmarNovaSenha ? (
                         <EyeOff size={18} />
                       ) : (
                         <Eye size={18} />
@@ -348,7 +348,7 @@ export function Registrar() {
                     </button>
                   </div>
 
-                  {passwordsMismatch && (
+                  {senhasNaoConferem && (
                     <p className="mt-2 text-xs text-red-600">
                       As senhas não coincidem.
                     </p>
@@ -367,11 +367,11 @@ export function Registrar() {
 
                   <button
                     type="submit"
-                    disabled={!canSubmit || loading || password.length < 8}
+                    disabled={!canSubmit || loading || novaSenha.length < 8}
                     className="flex h-12 flex-[1.6] items-center justify-center gap-2 rounded-lg bg-green-600 font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:hover:bg-gray-300"
                   >
-                    {loading ? <Loader2 size={18} className="animate-spin" /> : <UserPlus size={18} />}
-                    {loading ? "Criando..." : "Criar conta"}
+                    {loading ? <Loader2 size={18} className="animate-spin" /> : <KeyRound size={18} />}
+                    {loading ? "Salvando..." : "Redefinir senha"}
                   </button>
                 </div>
               </>
@@ -386,3 +386,5 @@ export function Registrar() {
     </div>
   );
 }
+
+

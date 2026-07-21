@@ -10,8 +10,9 @@ import { Login } from './pages/Login';
 import { Registrar } from './pages/Registrar';
 
 import { DashboardClient } from './pages/DashboardClient';
-import { getToken } from './services/clientApi';
 import { LoginAdmin } from './pages/LoginAdmin';
+import { RedefinirSenha } from './pages/RedefinirSenha';
+import { useAuthToken } from './hooks/useAuthToken';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -25,7 +26,7 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 
 // Guard para rotas de cliente
 function PrivateRouteClient({ children }: { children: React.ReactNode }) {
-  return getToken() ? <>{children}</> : <Navigate to="/" replace />;
+  return useAuthToken() ? <>{children}</> : <Navigate to="/" replace />;
 }
 
 function AppRoutes() {
@@ -79,12 +80,17 @@ function AppRoutes() {
       {/* Rotas do CLIENTE */}
       <Route
         path="/"
-        element={getToken() ? <Navigate to="/cliente/dashboard" replace /> : <Login />}
+        element={useAuthToken() ? <Navigate to="/dashboard" replace /> : <Login />}
       />
 
       <Route
         path="/registrar"
-        element={getToken() ? <Navigate to="/cliente/dashboard" replace /> : <Registrar />}
+        element={useAuthToken() ? <Navigate to="/dashboard" replace /> : <Registrar />}
+      />
+
+      <Route
+        path="/redefinir-senha"
+        element={useAuthToken() ? <Navigate to="/dashboard" replace /> : <RedefinirSenha />}
       />
 
       <Route

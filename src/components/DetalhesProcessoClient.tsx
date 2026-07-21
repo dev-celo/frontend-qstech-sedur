@@ -18,8 +18,6 @@ export function DetalhesProcessoClient({
   erro,
 }: DetalhesProcessoClientProps) {
   const [aba, setAba] = useState<Aba>("andamento");
-  console.log(detalhes?.tramitacoes);
-
 
   return (
     <div className="flex h-full min-h-0 flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -73,11 +71,21 @@ export function DetalhesProcessoClient({
         )}
 
         {!carregando && !erro && detalhes && aba === "andamento" && (
-          <AndamentoClient andamento={detalhes.andamento} />
+          <div
+            key={`andamento-${detalhes.andamento.id}`}
+            className="animate-fade-in-up"
+          >
+            <AndamentoClient andamento={detalhes.andamento} />
+          </div>
         )}
 
         {!carregando && !erro && detalhes && aba === "tramitacoes" && (
-          <TramitacoesClient tramitacoes={detalhes.tramitacoes} />
+          <div
+            key={`tramitacoes-${detalhes.andamento.id}`}
+            className="animate-fade-in-up"
+          >
+            <TramitacoesClient tramitacoes={detalhes.tramitacoes} />
+          </div>
         )}
       </div>
     </div>

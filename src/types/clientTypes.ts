@@ -26,8 +26,6 @@ export type validarCodigoPayload = {
   proposito: string
 }
 
-
-
 // Dados da empresa exibidos no HeaderClient
 export interface EmpresaInfo {
   empresa: string;
@@ -79,6 +77,7 @@ export interface Tramitacao {
   data: string;
   destino: string;
   estagio: string;
+  parecer: string;
 }
 
 export type ProcessoTramitacoes = Tramitacao[];
@@ -88,4 +87,9 @@ export type ProcessoTramitacoes = Tramitacao[];
 export interface ProcessoDetalhes {
   andamento: ProcessoAndamento;
   tramitacoes: ProcessoTramitacoes;
+}
+
+export type redefinirSenhaPayload = {
+  cnpj_cpf: string;
+  novaSenha: string;
 }

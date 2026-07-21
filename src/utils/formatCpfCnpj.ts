@@ -1,17 +1,14 @@
 export function limparCpfCnpj(value: string): string {
-  let cleaned = value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-
-  if (cleaned.length <= 11) {
-    cleaned = cleaned.replace(/[^0-9]/g, "");
-  }
-
+  const cleaned = value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
   return cleaned.slice(0, 14);
 }
 
 export function formatCpfCnpj(value: string): string {
   const cleaned = limparCpfCnpj(value);
+  const temLetra = /[A-Z]/.test(cleaned);
 
-  if (cleaned.length <= 11) {
+  // só trata como CPF se tiver 11 caracteres ou menos E for só dígito
+  if (cleaned.length <= 11 && !temLetra) {
     let formatted = "";
     for (let i = 0; i < cleaned.length; i++) {
       if (i === 3) formatted += ".";
@@ -22,6 +19,7 @@ export function formatCpfCnpj(value: string): string {
     return formatted;
   }
 
+  // CNPJ (aceita letras)
   let formatted = "";
   for (let i = 0; i < cleaned.length; i++) {
     if (i === 2) formatted += ".";

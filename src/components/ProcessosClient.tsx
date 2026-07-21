@@ -12,8 +12,6 @@ import {
   requestError
 } from "@/services/clientApi.ts";
 
-// TODO: Tirar Loading ao trocar a paginação
-
 const ITENS_POR_PAGINA = 5;
 
 export function ProcessosClient() {
@@ -83,11 +81,8 @@ export function ProcessosClient() {
     }
   };
 
-
-  // console.log(detalhes, 'detalhes');
-
   return (
-    <div className="grid h-full min-h-0 grid-cols-1 gap-6 lg:grid-cols-5">
+    <div className="grid h-full min-h-0 grid-cols-1 gap-6 lg:grid-cols-5" >
       <div className="min-h-0 lg:col-span-2">
         <div className="flex h-full min-h-0 flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="shrink-0 text-lg font-bold text-gray-800">
@@ -115,7 +110,7 @@ export function ProcessosClient() {
 
             {!carregandoLista &&
               !erroLista &&
-              processos.map((processo) => (
+              processos.map((processo, index) => (
                 <CardClient
                   key={processo.id}
                   protocolo={processo.protocolo}
@@ -125,6 +120,8 @@ export function ProcessosClient() {
                   ultimaTramitacaoDestino={processo.ultima_tramitacao_destino}
                   selecionado={processo.id === processoSelecionadoId}
                   onClick={() => handleSelecionarProcesso(processo.id)}
+                  className="animate-fade-in-up"
+                  style={{ animationDelay: `${index * 40}ms` }}
                 />
               ))}
           </div>

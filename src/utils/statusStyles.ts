@@ -35,7 +35,7 @@ const STATUS_STYLES: Record<string, StatusStyle> = {
 const DEFAULT_STYLE: StatusStyle = {
   badge: "bg-gray-100 text-gray-600",
   icon: "bg-gray-100 text-gray-500",
-  border: "border-gray-300",
+  border: "border-gray-800",
 };
 
 export function getStatusStyle(estagio: string): StatusStyle {

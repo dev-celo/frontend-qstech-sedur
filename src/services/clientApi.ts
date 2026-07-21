@@ -4,6 +4,7 @@ import type {
 
   gerarCodigoPayload,
   validarCodigoPayload,
+  redefinirSenhaPayload,
 } from "../types/clientTypes.ts";
 
 // ERROR HANDLER
@@ -18,10 +19,21 @@ export class requestError extends Error {
 
 // TOKEN 
 const TOKEN_KEY = "client_token";
+const EVENTO_TOKEN = "auth-token-changed";
 
-export function getToken(): string | null { return localStorage.getItem(TOKEN_KEY) }
-export function setToken(token: string): void { localStorage.setItem(TOKEN_KEY, token) }
-export function clearToken(): void { localStorage.removeItem(TOKEN_KEY) }
+export function getToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setToken(token: string): void {
+  localStorage.setItem(TOKEN_KEY, token);
+  window.dispatchEvent(new Event(EVENTO_TOKEN));
+}
+
+export function clearToken(): void {
+  localStorage.removeItem(TOKEN_KEY);
+  window.dispatchEvent(new Event(EVENTO_TOKEN));
+}
 
 function authHeaders(): HeadersInit {
   const token = getToken();
@@ -65,10 +77,10 @@ export async function registroClient(cnpj_cpf: string, senha: string) {
 }
 
 // API GERAR CÓDIGO
-export async function gerarCodigoClient(cnpj_cpf: string) {
+export async function gerarCodigoClient(cnpj_cpf: string, proposito: string) {
   const path = "/api/verificacao/enviar"
   const errorMessage = "Não foi possível gerar o código."
-  return post(path, { cnpj_cpf, proposito: 'registro' }, errorMessage)
+  return post(path, { cnpj_cpf, proposito }, errorMessage)
 }
 
 // API VALIDAR CÓDIGO
@@ -111,4 +123,32 @@ export async function fetchProcessoClient(id: string) {
 // API PROCESSOS ID TRAMITAÇÕES
 export async function fetchTramitacoesClient(id: string) {
   return get(`/api/cliente/processo/${id}/tramitacoes`, 'Não foi possível carregar as tramitações.')
+}
+
+// ROTA PATCH
+async function patch(
+  path: string,
+  body: clientPayload | gerarCodigoPayload | validarCodigoPayload | redefinirSenhaPayload,
+  errorMessage: string
+) {
+  const response = await fetch(path, {
+    method: 'PATCH',
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
+    },
+    credentials: 'include',
+    body: JSON.stringify(body)
+  })
+  const data = await response.json().catch(() => null)
+  if (!response.ok) throw new requestError(data?.message || errorMessage, response.status);
+  return data
+}
+
+// API REDEFINIR SENHA
+export async function redefinirSenhaClient(cnpj_cpf: string, novaSenha: string): Promise<{ message: string }> {
+  const path = '/api/cliente/redefinir-senha'
+  const errorMessage = "Não foi possível redefinir a senha"
+  const data = await patch(path, { cnpj_cpf, novaSenha }, errorMessage)
+  return data
 }

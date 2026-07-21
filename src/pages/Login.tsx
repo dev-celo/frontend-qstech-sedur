@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, KeyRound, UserPlus, Building2, Eye, EyeOff, Loader2 } from "lucide-react";
 import { loginClient, requestError } from "@/services/clientApi";
+import { formatCpfCnpj } from "@/utils/formatCpfCnpj";
 
 export function Login() {
   const navigate = useNavigate()
@@ -11,23 +12,6 @@ export function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const formatCnpj = (value: string) => {
-    const cleaned = value.replace(/[^a-zA-Z0-9]/g, "").slice(0, 14);
-
-    let formatted = "";
-
-    for (let i = 0; i < cleaned.length; i++) {
-      if (i === 2) formatted += ".";
-      if (i === 5) formatted += ".";
-      if (i === 8) formatted += "/";
-      if (i === 12) formatted += "-";
-
-      formatted += cleaned[i];
-    }
-
-    return formatted;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,7 +35,7 @@ export function Login() {
         localStorage.setItem("client_token", data.token);
       }
 
-      navigate("/client-dashboard");
+      navigate("/dashboard");
     } catch (err) {
       setError(err instanceof requestError ? err.message : "Não foi possível conectar ao servidor. Tente novamente.");
     } finally {
@@ -93,7 +77,7 @@ export function Login() {
 
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700">
-                CNPJ
+                CNPJ/CPF
               </label>
 
               <div className="relative">
@@ -105,7 +89,7 @@ export function Login() {
                 <input
                   type="text"
                   value={cnpj}
-                  onChange={(e) => setCnpj(formatCnpj(e.target.value))}
+                  onChange={(e) => setCnpj(formatCpfCnpj(e.target.value))}
                   placeholder="00.000.000/0000-00"
                   className="h-12 w-full rounded-lg border border-gray-300 px-4 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-500"
                 />
@@ -149,7 +133,7 @@ export function Login() {
 
             <div className="flex justify-between text-sm">
               <Link
-                to="/registro"
+                to="/registrar"
                 className="flex items-center gap-2 text-green-700 hover:underline"
               >
                 <UserPlus size={16} />
@@ -157,7 +141,7 @@ export function Login() {
               </Link>
 
               <Link
-                to="/recuperar-senha"
+                to="/redefinir-senha"
                 className="flex items-center gap-2 text-green-700 hover:underline"
               >
                 <KeyRound size={16} />

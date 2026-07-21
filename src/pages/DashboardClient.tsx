@@ -48,9 +48,8 @@ export function DashboardClient() {
 
   const handleLogout = () => {
     clearToken();
-    navigate("/login");
+    navigate("/");
   };
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-gray-200 px-4 py-8">
