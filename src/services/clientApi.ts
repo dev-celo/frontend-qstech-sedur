@@ -7,7 +7,7 @@ import type {
   redefinirSenhaPayload,
 } from "../types/clientTypes.ts";
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_CLIENT_URL;
 
 // ERROR HANDLER
 export class requestError extends Error {
