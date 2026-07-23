@@ -38,7 +38,7 @@ function AppRoutes() {
       {/* Rotas do ADMIN */}
       <Route
         path="/admin/login"
-        element={isAuthenticated ? <Navigate to="/" replace /> : <LoginAdmin />}
+        element={isAuthenticated ? <Navigate to="/admin/dashboard" replace /> : <LoginAdmin />}
       />
 
       <Route
