@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import gsap from "gsap";
 
 const navLinks = [
-  { path: "/", label: "Dashboard" },
-  { path: "/sobre", label: "Sobre" },
-  { path: "/contato", label: "Contato" },
-  { path: "/localizacao", label: "Localização" },
+  { path: "/admin/login", label: "Dashboard" },
+  { path: "/admin/sobre", label: "Sobre" },
+  { path: "/admin/contato", label: "Contato" },
+  { path: "/admin/localizacao", label: "Localização" },
 ];
 
 export function Header() {
@@ -32,12 +32,12 @@ export function Header() {
   return (
     <header className="relative">
       <nav className="bg-white/70 backdrop-blur-xl shadow-md border-b border-green-100">
-        
+
         {/* Container com mais espaço para a logo */}
         <div className="max-w-7xl mx-auto px-6 md:px-8 py-2 flex items-center justify-between">
-          
+
           {/* 🔥 LOGO MAIOR 🔥 */}
-          <Link to="/" className="flex items-center ml-4 md:ml-10">
+          <Link to="/admin/login" className="flex items-center ml-4 md:ml-10">
             <img
               src="/logo-qstech-nome-qstech-consultoria&gestao-ambientalverde.png"
               alt="QSTech"
@@ -52,11 +52,10 @@ export function Header() {
                 key={link.path}
                 to={link.path}
                 className={`nav-item relative px-4 py-2 text-sm font-medium rounded-full transition-all
-                ${
-                  location.pathname === link.path
+                ${location.pathname === link.path
                     ? "text-white bg-gradient-to-r from-green-500 to-emerald-600 shadow-md"
                     : "text-gray-600 hover:text-green-600 hover:bg-green-50"
-                }`}
+                  }`}
               >
                 {link.label}
               </Link>
