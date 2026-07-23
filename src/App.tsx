@@ -1,75 +1,111 @@
-// frontend/src/App.tsx
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { LoginPage } from './components/LoginPage';
 import { Dashboard } from './pages/Dashboard';
 import { Sobre } from './pages/Sobre';
 import { Contato } from './pages/Contato';
 import { Localizacao } from './pages/Localizacao';
 import { ToastProvider } from './components/Toast';
 
+import { Login } from './pages/Login';
+import { Registrar } from './pages/Registrar';
+
+import { DashboardClient } from './pages/DashboardClient';
+import { LoginAdmin } from './pages/LoginAdmin';
+import { RedefinirSenha } from './pages/RedefinirSenha';
+import { useAuthToken } from './hooks/useAuthToken';
+
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
   }
-  
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+
+  return isAuthenticated ? children : <Navigate to="/admin/login" replace />;
+}
+
+// Guard para rotas de cliente
+function PrivateRouteClient({ children }: { children: React.ReactNode }) {
+  return useAuthToken() ? <>{children}</> : <Navigate to="/" replace />;
 }
 
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
-  
+
   return (
     <Routes>
-      {/* Rota de login - se já estiver logado, vai para o dashboard */}
-      <Route 
-        path="/login" 
-        element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} 
+
+      {/* Rotas do ADMIN */}
+      <Route
+        path="/admin/login"
+        element={isAuthenticated ? <Navigate to="/" replace /> : <LoginAdmin />}
       />
-      
-      {/* Rotas protegidas (requerem autenticação) */}
-      <Route 
-        path="/" 
+
+      <Route
+        path="/admin/dashboard"
         element={
           <PrivateRoute>
             <Dashboard />
           </PrivateRoute>
-        } 
+        }
       />
-      
-      <Route 
-        path="/sobre" 
+
+      <Route
+        path="/admin/sobre"
         element={
           <PrivateRoute>
             <Sobre />
           </PrivateRoute>
-        } 
+        }
       />
-      
-      <Route 
-        path="/contato" 
+
+      <Route
+        path="/admin/contato"
         element={
           <PrivateRoute>
             <Contato />
           </PrivateRoute>
-        } 
+        }
       />
-      
-      <Route 
-        path="/localizacao" 
+
+      <Route
+        path="/admin/localizacao"
         element={
           <PrivateRoute>
             <Localizacao />
           </PrivateRoute>
-        } 
+        }
       />
-      
+
+      {/* Rotas do CLIENTE */}
+      <Route
+        path="/"
+        element={useAuthToken() ? <Navigate to="/dashboard" replace /> : <Login />}
+      />
+
+      <Route
+        path="/registrar"
+        element={useAuthToken() ? <Navigate to="/dashboard" replace /> : <Registrar />}
+      />
+
+      <Route
+        path="/redefinir-senha"
+        element={useAuthToken() ? <Navigate to="/dashboard" replace /> : <RedefinirSenha />}
+      />
+
+      <Route
+        path="/dashboard"
+        element={
+          <PrivateRouteClient>
+            <DashboardClient />
+          </PrivateRouteClient>
+        }
+      />
+
+
       {/* Redirecionamentos */}
-      <Route path="/dashboard" element={<Navigate to="/" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    </Routes >
   );
 }
 
