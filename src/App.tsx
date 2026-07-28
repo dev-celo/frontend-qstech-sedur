@@ -13,6 +13,11 @@ import { DashboardClient } from './pages/DashboardClient';
 import { LoginAdmin } from './pages/LoginAdmin';
 import { RedefinirSenha } from './pages/RedefinirSenha';
 import { useAuthToken } from './hooks/useAuthToken';
+import { useAuthTokenProcurador } from './hooks/useAuthTokenProcurador';
+import { DashboardProcurador } from './pages/DashboardProcurador';
+import { RedefinirSenhaProcurador } from './pages/RedefinirSenhaProcurador';
+import { RegistrarProcurador } from './pages/RegistrarProcurador';
+import { LoginProcurador } from './pages/LoginProcurador';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -28,6 +33,12 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 function PrivateRouteClient({ children }: { children: React.ReactNode }) {
   return useAuthToken() ? <>{children}</> : <Navigate to="/" replace />;
 }
+
+// Guard para rotas de procurador
+function PrivateRouteProcurador({ children }: { children: React.ReactNode }) {
+  return useAuthTokenProcurador() ? <>{children}</> : <Navigate to="/procurador/login" replace />;
+}
+
 
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
@@ -102,6 +113,30 @@ function AppRoutes() {
         }
       />
 
+      {/* Rotas do PROCURADOR */}
+      <Route
+        path="/procurador/login"
+        element={useAuthTokenProcurador() ? <Navigate to="/procurador/dashboard" replace /> : <LoginProcurador />}
+      />
+
+      <Route
+        path="/procurador/registrar"
+        element={useAuthTokenProcurador() ? <Navigate to="/procurador/dashboard" replace /> : <RegistrarProcurador />}
+      />
+
+      <Route
+        path="/procurador/redefinir-senha"
+        element={useAuthTokenProcurador() ? <Navigate to="/procurador/dashboard" replace /> : <RedefinirSenhaProcurador />}
+      />
+
+      <Route
+        path="/procurador/dashboard"
+        element={
+          <PrivateRouteProcurador>
+            <DashboardProcurador />
+          </PrivateRouteProcurador>
+        }
+      />
 
       {/* Redirecionamentos */}
       <Route path="*" element={<Navigate to="/" replace />} />

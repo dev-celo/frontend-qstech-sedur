@@ -37,6 +37,9 @@ export interface EmpresaInfo {
 // Item resumido exibido em cada CardClient (lista "Meus processos")
 export interface ProcessoResumo {
   id: string;
+  cnpj_cpf: string;
+  empresa: string;
+  servico: string;
   protocolo: string;
   qtde_tramitacoes: number;
   estagio: string;

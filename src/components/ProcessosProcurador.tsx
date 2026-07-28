@@ -6,11 +6,11 @@ import { CardClient } from "./CardClient";
 import { DetalhesProcessoClient } from "./DetalhesProcessoClient";
 
 import {
-  fetchProcessoClient,
-  fetchProcessosClient,
-  fetchTramitacoesClient,
+  fetchProcessoProcurador,
+  fetchProcessosProcurador,
+  fetchTramitacoesProcurador,
   requestError
-} from "@/services/clientApi.ts";
+} from "../services/procuradorApi.ts";
 
 const ITENS_POR_PAGINA = 5;
 
@@ -38,7 +38,7 @@ function getPaginasVisiveis(paginaAtual: number, totalPaginas: number): (number 
   return paginas;
 }
 
-export function ProcessosClient() {
+export function ProcessosProcurador() {
   const [todosProcessos, setTodosProcessos] = useState<ProcessoResumo[]>([]);
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [carregandoLista, setCarregandoLista] = useState(true);
@@ -58,7 +58,7 @@ export function ProcessosClient() {
       setErroLista(null);
 
       try {
-        const resposta = await fetchProcessosClient();
+        const resposta = await fetchProcessosProcurador();
         if (!ativo) return;
         const processosCarregados = resposta.processos ?? [];
         setTodosProcessos(processosCarregados);
@@ -100,8 +100,8 @@ export function ProcessosClient() {
 
     try {
       const [andamento, tramitacoes] = await Promise.all([
-        fetchProcessoClient(processoId),
-        fetchTramitacoesClient(processoId),
+        fetchProcessoProcurador(processoId),
+        fetchTramitacoesProcurador(processoId),
       ]);
       setDetalhes({ andamento, tramitacoes });
     } catch (err) {
@@ -116,7 +116,7 @@ export function ProcessosClient() {
       <div className="min-h-0 lg:col-span-2">
         <div className="flex h-full min-h-0 flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="shrink-0 text-lg font-bold text-gray-800">
-            Meus processos
+            Processos vinculados
           </h2>
 
           <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
@@ -134,7 +134,7 @@ export function ProcessosClient() {
 
             {!carregandoLista && !erroLista && processos.length === 0 && (
               <p className="py-10 text-center text-sm text-gray-500">
-                Nenhum processo encontrado para este CNPJ.
+                Nenhum processo vinculado a este CPF.
               </p>
             )}
 
@@ -164,7 +164,6 @@ export function ProcessosClient() {
               <p className="shrink-0 text-xs text-gray-500">
                 Mostrando {processos.length} de {totalProcessos} processos
               </p>
-
               <div className="flex min-w-0 items-center gap-1 overflow-x-auto">
                 <button
                   type="button"
@@ -189,7 +188,7 @@ export function ProcessosClient() {
                       type="button"
                       onClick={() => setPaginaAtual(item)}
                       className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-medium transition
-                        ${item === paginaAtual
+            ${item === paginaAtual
                           ? "bg-green-600 text-white"
                           : "text-gray-600 hover:bg-gray-100"
                         }`}
@@ -201,17 +200,14 @@ export function ProcessosClient() {
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setPaginaAtual((p) => Math.min(totalPaginas, p + 1))
-                  }
+                  onClick={() => setPaginaAtual((p) => Math.min(totalPaginas, p + 1))}
                   disabled={paginaAtual === totalPaginas}
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-500 disabled:opacity-40"
                 >
                   <ChevronRight size={16} />
                 </button>
               </div>
-            </div>
-          )}
+            </div>)}
         </div>
       </div>
 
