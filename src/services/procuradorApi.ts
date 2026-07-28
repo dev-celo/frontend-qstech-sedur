@@ -10,8 +10,7 @@ import type {
   ProcessoTramitacoes,
 } from "../types/procuradorTypes.ts";
 
-// const API_URL = import.meta.env.VITE_API_CLIENT_URL;
-const API_URL = 'http://localhost:8000'
+const API_URL = import.meta.env.VITE_API_CLIENT_URL;
 
 // ERROR HANDLER
 export class requestError extends Error {
