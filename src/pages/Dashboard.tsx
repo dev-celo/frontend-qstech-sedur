@@ -277,7 +277,7 @@ export function Dashboard() {
           {/* BARRA DE STATUS E AÇÕES (Refinada)                    */}
           {/* ===================================================== */}
 
-          <div className="flex flex-wrap justify-between items-center gap-3 mb-6 bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-slate-100/80 shadow-sm">
+          <div className="flex flex-wrap justify-between items-center gap-3 mb-6 bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-slate-100/80 shadow-sm relative z-50">
             <div className="flex items-center gap-3">
               <div
                 className={`w-2 h-2 rounded-full animate-pulse ${refreshing ? "bg-amber-500" : "bg-emerald-500"

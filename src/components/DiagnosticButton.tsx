@@ -65,15 +65,15 @@ export function DiagnosticButtons({ onRefreshComplete }: DiagnosticButtonsProps)
   const handleForceRefresh = async () => {
     setLoading('refresh');
     setRefreshMessage('Forçando atualização dos dados...');
-    
+
     try {
       const processos = await forceRefreshProcessos();
       setRefreshMessage(`✅ Cache atualizado! ${processos.length} processos carregados.`);
-      
+
       if (onRefreshComplete) {
         onRefreshComplete();
       }
-      
+
       setTimeout(() => setRefreshMessage(null), 3000);
     } catch (error) {
       console.error('Erro ao forçar refresh:', error);
@@ -87,7 +87,7 @@ export function DiagnosticButtons({ onRefreshComplete }: DiagnosticButtonsProps)
   const handleLimparCache = () => {
     limparCacheService();
     setRefreshMessage('🧹 Cache local limpo! Recarregando...');
-    
+
     setTimeout(() => {
       window.location.reload();
     }, 1500);
@@ -136,7 +136,7 @@ export function DiagnosticButtons({ onRefreshComplete }: DiagnosticButtonsProps)
             <Server className="w-4 h-4" />
             Diagnóstico da API
           </h3>
-          
+
           <div className="space-y-3">
             {/* Server Status */}
             <button
@@ -154,7 +154,7 @@ export function DiagnosticButtons({ onRefreshComplete }: DiagnosticButtonsProps)
                 <RefreshCw className="w-3 h-3" />
               )}
             </button>
-            
+
             {serverStatus && (
               <div className="text-xs p-2 bg-blue-50 rounded">
                 <p>Status: {serverStatus.status || 'online'}</p>
@@ -178,7 +178,7 @@ export function DiagnosticButtons({ onRefreshComplete }: DiagnosticButtonsProps)
                 <RefreshCw className="w-3 h-3" />
               )}
             </button>
-            
+
             {sessaoInfo && (
               <div className="text-xs p-2 bg-blue-50 rounded space-y-1">
                 <p className="flex justify-between">
@@ -229,7 +229,7 @@ export function DiagnosticButtons({ onRefreshComplete }: DiagnosticButtonsProps)
                 <Trash2 className="w-4 h-4" />
                 Limpar cache e recarregar
               </button>
-              
+
               <button
                 onClick={verErros}
                 className="w-full text-left p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-sm flex items-center gap-2"
