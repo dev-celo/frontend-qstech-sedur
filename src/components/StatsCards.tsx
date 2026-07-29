@@ -99,7 +99,7 @@ export default function StatsCards({ resumo, total }: StatsCardsProps) {
       {stats.map((stat, index) => {
         const Icon = stat.icon;
         const percentual = maxValue > 0 ? (stat.value / maxValue) * 100 : 0;
-        
+
         return (
           <div
             key={stat.title}

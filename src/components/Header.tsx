@@ -37,11 +37,11 @@ export function Header() {
         <div className="max-w-7xl mx-auto px-6 md:px-8 py-2 flex items-center justify-between">
 
           {/* 🔥 LOGO MAIOR 🔥 */}
-          <Link to="/admin/login" className="flex items-center ml-4 md:ml-10">
+          <Link to="/admin/login" className="flex items-center mt-4 ml-4 md:ml-10">
             <img
               src="/logo-qstech-nome-qstech-consultoria&gestao-ambientalverde.png"
               alt="QSTech"
-              className="h-20 md:h-28 w-auto object-contain transition-transform duration-300 hover:scale-105"
+              className="h-20 md:h-28 scale-150 md:scale-125 w-auto object-contain transition-transform duration-300 hover:scale-105"
             />
           </Link>
 
@@ -81,7 +81,7 @@ export function Header() {
                 key={link.path}
                 to={link.path}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="block py-2 text-sm text-gray-700 hover:text-green-600"
+                className="py-2 flex justify-center text-sm text-gray-700 hover:text-green-600"
               >
                 {link.label}
               </Link>

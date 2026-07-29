@@ -30,12 +30,12 @@ const columnConfig = {
   },
 };
 
-export function KanbanColumn({ 
-  title, 
-  count, 
-  processos, 
-  type, 
-  index 
+export function KanbanColumn({
+  title,
+  count,
+  processos,
+  type,
+  index
 }: KanbanColumnProps) {
   const columnRef = useRef<HTMLDivElement>(null);
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
@@ -78,7 +78,7 @@ export function KanbanColumn({
       className="flex-1 min-w-[360px] max-w-[440px] bg-transparent flex flex-col h-[calc(100vh-240px)] min-h-[500px]"
     >
       {/* Header minimalista */}
-      <div className="px-4 pb-4 mb-2">
+      <div className="px-4 py-4 mb-2 rounded-2xl border border-green-600">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
             <Circle className={`w-2 h-2 ${config.dotColor} fill-current`} />
@@ -111,8 +111,8 @@ export function KanbanColumn({
                 transition: "opacity 250ms cubic-bezier(0.2, 0, 0, 1)",
               }}
             >
-              <KanbanCard 
-                processo={processo} 
+              <KanbanCard
+                processo={processo}
                 index={idx}
                 isHovered={hoveredCardId === processo.id}
                 onHover={setHoveredCardId}
