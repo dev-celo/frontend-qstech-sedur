@@ -17,7 +17,9 @@ import {
 import type { FilterState, Processo } from "@/types";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { SedurLoginAlert } from "@/components/SedurLoginAlert";
 import { parseBRDate } from "@/utils/date";
+import { PararAutomacaoButton } from "@/components/PararAutomacaoButton";
 
 // Função para formatar data ISO para padrão brasileiro
 function formatarDataBR(dataISO: string): string {
@@ -226,6 +228,8 @@ export function Dashboard() {
     <>
       <Header />
 
+      <SedurLoginAlert />
+
       {/* Container principal com gradientes premium e margens otimizadas */}
       <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/30 overflow-hidden">
 
@@ -308,6 +312,7 @@ export function Dashboard() {
               <LoginButton onLoginSuccess={() => carregarProcessos()} />
               <ExtracaoButton onExtracaoComplete={handleExtracaoCompleta} />
               <FirestoreButton onSuccess={handleFirestoreSuccess} />
+              <PararAutomacaoButton />
             </div>
           </div>
 
