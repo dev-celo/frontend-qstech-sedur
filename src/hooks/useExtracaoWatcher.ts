@@ -14,7 +14,7 @@ interface UseExtracaoWatcherOptions {
 }
 
 export function useExtracaoWatcher({
-  intervaloMs = 5000,
+  intervaloMs = 15 * 60 * 1000,
   onExtracaoConcluida,
   onLoginInativo,
 }: UseExtracaoWatcherOptions) {
