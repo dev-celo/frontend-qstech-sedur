@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { marcarLoginRealizado } from '@/lib/loginFlag';
 import { getAuthToken, logout } from '../lib/auth';
 
 // ============================================
@@ -35,23 +36,23 @@ function isValidExtractionId(id: string): boolean {
 // ============================================
 async function authFetch(endpoint: string, options: RequestInit = {}) {
   const token = getAuthToken();
-  
+
   const headers = {
     'Content-Type': 'application/json',
     ...(token && { 'Authorization': `Bearer ${token}` }),
     ...options.headers,
   };
-  
+
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers,
   });
-  
+
   if (response.status === 401) {
     logout();
     throw new Error('Sessão expirada. Faça login novamente.');
   }
-  
+
   return response;
 }
 
@@ -173,18 +174,15 @@ class ApiClient {
       console.log('📥 Resposta bruta:', text);
 
       let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
+      try { data = JSON.parse(text); } catch {
         console.log('❌ Resposta não é JSON, retornando texto');
         return text as any;
       }
 
-      if (!response.ok) {
-        throw new Error(data.error || `Erro ${response.status}`);
-      }
+      if (!response.ok) throw new Error(data.error || `Erro ${response.status}`);
 
       console.log('✅ Login resposta:', data);
+      marcarLoginRealizado();
 
       await this.atualizarStatusSessaoLocal();
 
@@ -196,12 +194,35 @@ class ApiClient {
   }
 
   // ============================================
+  // LOGIN SEDUR STATUS (LOCAL)
+  // ============================================
+  async verificarLoginSedur() {
+    const response = await fetch(`${API_URL_LOCAL}/api/login/status`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    if (!response.ok) throw new Error('Erro ao consultar status do login SEDUR');
+    return response.json();
+  }
+
+  async pararAutomacao(): Promise<{ success: boolean; message: string }> {
+    const url = buildUrl(API_URL_LOCAL, 'api/login/parar');
+    console.log('🛑 Parando automação em:', url);
+
+    const response = await fetch(url, { method: 'POST' });
+
+    if (!response.ok) throw new Error('Erro ao parar automação SEDUR');
+    return response.json();
+  }
+
+  // ============================================
   // EXTRAÇÃO DE PROCESSOS (LOCAL)
   // ============================================
   async iniciarExtracao(headless = true): Promise<{ extractionId: string }> {
     const url = buildUrl(API_URL_LOCAL, 'api/extrair');
     console.log('🚀 Iniciando extração em:', url);
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -341,7 +362,7 @@ class ApiClient {
   // ============================================
   // MÉTODOS DE UTILIDADE PÚBLICA
   // ============================================
-  
+
   /**
    * Limpa o extractionId armazenado
    */
