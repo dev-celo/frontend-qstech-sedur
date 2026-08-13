@@ -1,15 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from "react";
-
-const API_URL = (
-  import.meta.env.VITE_API_URL || 'https://backend-qstech-sedur.onrender.com'
-).replace(/\/$/, '');
-
-if (!API_URL) {
-  console.warn(
-    "⚠️ [useExtracaoWatcher] Nenhuma URL de API disponível (nem VITE_API_URL nem fallback)! " +
-    "As requisições vão falhar. Confira o .env do frontend."
-  );
-}
+import { api } from "@/services/api";
 
 interface LoginStatus {
   success: boolean;
@@ -42,24 +32,11 @@ export function useExtracaoWatcher({
   }, [onExtracaoConcluida, onLoginInativo]);
 
   const verificarStatus = useCallback(async () => {
-    const url = `${API_URL}/api/login/status`;
-
     try {
-      console.log(`📡 [useExtracaoWatcher] GET ${url}`);
+      console.log("📡 [useExtracaoWatcher] consultando api.verificarLoginSedur()...");
 
-      const res = await fetch(url);
+      const data: LoginStatus = await api.verificarLoginSedur();
 
-      console.log(`📥 [useExtracaoWatcher] resposta HTTP ${res.status} ${res.statusText}`);
-
-      if (!res.ok) {
-        console.error(
-          `❌ [useExtracaoWatcher] status HTTP não-OK (${res.status}). ` +
-          `Confira se a rota existe no backend e se a URL está correta: ${url}`
-        );
-        return;
-      }
-
-      const data: LoginStatus = await res.json();
       console.log("📦 [useExtracaoWatcher] dados recebidos:", data);
       setStatus(data);
 
@@ -79,15 +56,12 @@ export function useExtracaoWatcher({
       }
       loginAnteriorRef.current = data.loginAtivo;
     } catch (error) {
-      console.error(`❌ [useExtracaoWatcher] Falha na requisição para ${url}:`, error);
-      console.error(
-        "   Causas comuns: VITE_API_URL não definida/errada, CORS bloqueando, backend fora do ar."
-      );
+      console.error("❌ [useExtracaoWatcher] Falha ao consultar api.verificarLoginSedur():", error);
     }
   }, []);
 
   useEffect(() => {
-    console.log(`🚀 [useExtracaoWatcher] montado. API_URL="${API_URL}" intervalo=${intervaloMs}ms`);
+    console.log(`🚀 [useExtracaoWatcher] montado. intervalo=${intervaloMs}ms`);
 
     verificarStatus();
     const interval = setInterval(verificarStatus, intervaloMs);
