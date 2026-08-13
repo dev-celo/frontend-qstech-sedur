@@ -4,8 +4,8 @@ import StatsCards from "@/components/StatsCards";
 import { FilterBar } from "@/components/FilterBar";
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { LoginButton } from "@/components/LoginButton";
-import { ExtracaoButton } from "@/components/ExtracaoButton";
-import { FirestoreButton } from "@/components/FirestoreButton";
+// import { ExtracaoButton } from "@/components/ExtracaoButton";
+// import { FirestoreButton } from "@/components/FirestoreButton";
 import { DiagnosticButtons } from "@/components/DiagnosticButton";
 import { HeroDashboard } from "@/components/HeroDashboard";
 import {
@@ -20,6 +20,7 @@ import { Footer } from "@/components/Footer";
 import { SedurLoginAlert } from "@/components/SedurLoginAlert";
 import { parseBRDate } from "@/utils/date";
 import { PararAutomacaoButton } from "@/components/PararAutomacaoButton";
+import { useExtracaoWatcher } from "@/hooks/useExtracaoWatcher";
 
 // Função para formatar data ISO para padrão brasileiro
 function formatarDataBR(dataISO: string): string {
@@ -62,8 +63,8 @@ export function Dashboard() {
   const [lastUpdate, setLastUpdate] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
-  const [extractionId, setExtractionId] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState<number>(0);
+  // const [extractionId, setExtractionId] = useState<string | null>(null);
+  // const [refreshKey, setRefreshKey] = useState<number>(0);
   const [cacheInfo, setCacheInfo] = useState<{
     ativo: boolean;
     data: string | null;
@@ -124,25 +125,39 @@ export function Dashboard() {
 
   useEffect(() => {
     carregarProcessos();
-  }, [refreshKey, carregarProcessos]);
+  }, [
+    // refreshKey,
+    carregarProcessos]);
 
   const handleManualRefresh = useCallback(async () => {
     setRefreshing(true);
     await carregarProcessos(true);
   }, [carregarProcessos]);
 
-  const handleExtracaoCompleta = (_dados: unknown, id: string) => {
-    setExtractionId(id);
+  const handleExtracaoConcluida = useCallback(() => {
     const agora = new Date().toISOString();
     limparCache();
     setLastUpdate(formatarDataBR(agora));
     setCacheInfo({ ativo: false, data: null });
     carregarProcessos(false);
-  };
+  }, [carregarProcessos]);
 
-  const handleFirestoreSuccess = () => {
-    setRefreshKey((prev) => prev + 1);
-  };
+  useExtracaoWatcher({
+    onExtracaoConcluida: handleExtracaoConcluida,
+  });
+
+  // const handleExtracaoCompleta = (_dados: unknown, id: string) => {
+  //   setExtractionId(id);
+  //   const agora = new Date().toISOString();
+  //   limparCache();
+  //   setLastUpdate(formatarDataBR(agora));
+  //   setCacheInfo({ ativo: false, data: null });
+  //   carregarProcessos(false);
+  // };
+  //
+  // const handleFirestoreSuccess = () => {
+  //   setRefreshKey((prev) => prev + 1);
+  // };
 
   // 🔥 FILTROS (sem loading, sem debounce duplicado)
   const filteredProcessos = useMemo(() => {
@@ -310,8 +325,8 @@ export function Dashboard() {
             <div className="flex flex-wrap items-center gap-2">
               <DiagnosticButtons onRefreshComplete={handleManualRefresh} />
               <LoginButton onLoginSuccess={() => carregarProcessos()} />
-              <ExtracaoButton onExtracaoComplete={handleExtracaoCompleta} />
-              <FirestoreButton onSuccess={handleFirestoreSuccess} />
+              {/* <ExtracaoButton onExtracaoComplete={handleExtracaoCompleta} /> */}
+              {/* <FirestoreButton onSuccess={handleFirestoreSuccess} /> */}
               <PararAutomacaoButton />
             </div>
           </div>
@@ -390,11 +405,11 @@ export function Dashboard() {
                   {resumo.andamento} • Convite: {resumo.convite} • Finalizados:{" "}
                   {resumo.finalizado}
                 </p>
-                {extractionId && (
-                  <p className="text-emerald-500 mt-1 text-[11px]">
-                    ✅ Última extração: {extractionId.slice(-8)}
-                  </p>
-                )}
+                {/* {extractionId && ( */}
+                {/*   <p className="text-emerald-500 mt-1 text-[11px]"> */}
+                {/*     ✅ Última extração: {extractionId.slice(-8)} */}
+                {/*   </p> */}
+                {/* )} */}
                 {cacheInfo.ativo && cacheInfo.data && (
                   <p className="text-blue-500 mt-1 text-[10px]">
                     💾 Cache: {cacheInfo.data} • 0 leituras no Firestore

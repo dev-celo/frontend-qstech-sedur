@@ -19,7 +19,6 @@ export function PararAutomacaoButton() {
       await api.pararAutomacao();
 
       resetarFlagLogin();
-
       queryClient.invalidateQueries({ queryKey: ['sedur-login-status'] });
     } catch (error) {
       console.error('Erro ao parar automação:', error);
