@@ -1,20 +1,9 @@
-import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
+import { Link } from "react-router-dom";
 import gsap from "gsap";
 
-const navLinks = [
-  { path: "/admin/login", label: "Dashboard" },
-  { path: "/admin/sobre", label: "Sobre" },
-  { path: "/admin/contato", label: "Contato" },
-  { path: "/admin/localizacao", label: "Localização" },
-];
 
 export function Header() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const location = useLocation();
-
   useEffect(() => {
     gsap.fromTo(
       ".nav-item",
@@ -46,48 +35,8 @@ export function Header() {
           </Link>
 
           {/* NAV DESKTOP */}
-          <div className="hidden md:flex items-center gap-3">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`nav-item relative px-4 py-2 text-sm font-medium rounded-full transition-all
-                ${location.pathname === link.path
-                    ? "text-white bg-gradient-to-r from-green-500 to-emerald-600 shadow-md"
-                    : "text-gray-600 hover:text-green-600 hover:bg-green-50"
-                  }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* MOBILE */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            {isMobileMenuOpen ? <X /> : <Menu />}
-          </Button>
         </div>
 
-        {/* MOBILE MENU */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden px-6 pb-4">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="py-2 flex justify-center text-sm text-gray-700 hover:text-green-600"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-        )}
       </nav>
     </header>
   );

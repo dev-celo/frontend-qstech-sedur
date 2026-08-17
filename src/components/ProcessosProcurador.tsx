@@ -1,6 +1,6 @@
 import type { ProcessoResumo, ProcessoDetalhes } from "../types/clientTypes.ts";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 
 import { CardClient } from "./CardClient";
 import { DetalhesProcessoClient } from "./DetalhesProcessoClient";
@@ -44,6 +44,8 @@ export function ProcessosProcurador() {
   const [carregandoLista, setCarregandoLista] = useState(true);
   const [erroLista, setErroLista] = useState<string | null>(null);
 
+  const [filtroEmpresa, setFiltroEmpresa] = useState("");
+
   const [processoSelecionadoId, setProcessoSelecionadoId] = useState<string | null>(null);
 
   const [detalhes, setDetalhes] = useState<ProcessoDetalhes | null>(null);
@@ -84,13 +86,17 @@ export function ProcessosProcurador() {
     );
   }, [todosProcessos]);
 
-  const totalProcessos = processosOrdenados.length;
+  const processosFiltrados = processosOrdenados.filter((processo) =>
+    processo.empresa?.toLowerCase().includes(filtroEmpresa.toLowerCase())
+  );
+
+  const totalProcessos = processosFiltrados.length;
   const totalPaginas = Math.max(1, Math.ceil(totalProcessos / ITENS_POR_PAGINA));
 
   const processos = useMemo(() => {
     const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
-    return processosOrdenados.slice(inicio, inicio + ITENS_POR_PAGINA);
-  }, [processosOrdenados, paginaAtual]);
+    return processosFiltrados.slice(inicio, inicio + ITENS_POR_PAGINA);
+  }, [processosFiltrados, paginaAtual]);
 
   const handleSelecionarProcesso = async (processoId: string) => {
     setProcessoSelecionadoId(processoId);
@@ -119,6 +125,24 @@ export function ProcessosProcurador() {
             Processos vinculados
           </h2>
 
+          {/* Filtro por nome da empresa */}
+          <div className="mt-4 shrink-0 relative">
+            <Search
+              size={16}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+            <input
+              type="text"
+              value={filtroEmpresa}
+              onChange={(e) => {
+                setFiltroEmpresa(e.target.value);
+                setPaginaAtual(1);
+              }}
+              placeholder="Buscar por empresa..."
+              className="w-full rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-sm text-gray-700 outline-none focus:border-green-500"
+            />
+          </div>
+
           <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
             {carregandoLista && (
               <p className="py-10 text-center text-sm text-gray-500">
@@ -134,7 +158,9 @@ export function ProcessosProcurador() {
 
             {!carregandoLista && !erroLista && processos.length === 0 && (
               <p className="py-10 text-center text-sm text-gray-500">
-                Nenhum processo vinculado a este CPF.
+                {filtroEmpresa
+                  ? "Nenhum processo encontrado para essa empresa."
+                  : "Nenhum processo vinculado a este CPF."}
               </p>
             )}
 
