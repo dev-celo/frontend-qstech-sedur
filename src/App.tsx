@@ -19,6 +19,8 @@ import { RedefinirSenhaProcurador } from './pages/RedefinirSenhaProcurador';
 import { RegistrarProcurador } from './pages/RegistrarProcurador';
 import { LoginProcurador } from './pages/LoginProcurador';
 
+import HeroPage from './pages/HeroPage';
+
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -30,14 +32,14 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 // Guard para rotas de cliente
-function PrivateRouteClient({ children }: { children: React.ReactNode }) {
-  return useAuthToken() ? <>{children}</> : <Navigate to="/" replace />;
-}
+// function PrivateRouteClient({ children }: { children: React.ReactNode }) {
+//   return useAuthToken() ? <>{children}</> : <Navigate to="/" replace />;
+// }
 
 // Guard para rotas de procurador
-function PrivateRouteProcurador({ children }: { children: React.ReactNode }) {
-  return useAuthTokenProcurador() ? <>{children}</> : <Navigate to="/procurador/login" replace />;
-}
+// function PrivateRouteProcurador({ children }: { children: React.ReactNode }) {
+//   return useAuthTokenProcurador() ? <>{children}</> : <Navigate to="/procurador/login" replace />;
+// }
 
 
 function AppRoutes() {
@@ -90,7 +92,7 @@ function AppRoutes() {
 
       {/* Rotas do CLIENTE */}
       <Route
-        path="/"
+        path="/login"
         element={useAuthToken() ? <Navigate to="/dashboard" replace /> : <Login />}
       />
 
@@ -107,9 +109,9 @@ function AppRoutes() {
       <Route
         path="/dashboard"
         element={
-          <PrivateRouteClient>
-            <DashboardClient />
-          </PrivateRouteClient>
+          // <PrivateRouteClient>
+          <DashboardClient />
+          // </PrivateRouteClient>
         }
       />
 
@@ -132,11 +134,17 @@ function AppRoutes() {
       <Route
         path="/procurador/dashboard"
         element={
-          <PrivateRouteProcurador>
-            <DashboardProcurador />
-          </PrivateRouteProcurador>
+          // <PrivateRouteProcurador>
+          <DashboardProcurador />
+          // </PrivateRouteProcurador>
         }
       />
+
+      <Route
+        path="/"
+        element={<HeroPage />}
+      />
+
 
       {/* Redirecionamentos */}
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-
 import { fetchMeProcurador, clearToken } from "../services/procuradorApi.ts";
 import { HeaderProcurador } from "../components/HeaderProcurador.tsx";
 import { ProcessosProcurador } from "../components/ProcessosProcurador.tsx";
