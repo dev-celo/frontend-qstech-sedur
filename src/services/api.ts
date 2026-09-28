@@ -327,11 +327,18 @@ class ApiClient {
   // UTILITÁRIOS
   // ============================================
   async healthCheck() {
-    const url = buildUrl(API_URL_LOCAL, 'api/health');
-    const response = await fetch(url);
-    return response.json();
-  }
+    try {
+      const url = buildUrl(API_URL_LOCAL, 'api/health');
+      const response = await fetch(url, { signal: AbortSignal.timeout(3000) });
 
+      if (!response.ok) throw new Error(`Health check retornou ${response.status}`);
+
+      return await response.json();
+    } catch (error) {
+      console.warn('⚠️ Servidor indisponível:', error);
+      return null;
+    }
+  }
   async criarResumo() {
     const url = buildUrl(API_URL_LOCAL, 'api/criar-resumo');
     console.log('📊 Criando resumo em:', url);

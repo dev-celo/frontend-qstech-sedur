@@ -66,8 +66,8 @@ export function LoginButton({ onLoginSuccess }: LoginButtonProps) {
     setStatus('processing');
     setMessage('Iniciando login...');
 
-    const API_URL_LOGIN = import.meta.env.VITE_API_URL_LOGIN?.replace(/\/$/, '') || 'https://yuri.tail453696.ts.net/';
-    // 'https://cachyos-x8664.tail597abe.ts.net';
+    const API_URL_LOGIN = import.meta.env.VITE_API_URL_LOGIN?.replace(/\/$/, '');
+    const VITE_API_URL_LOGIN_TESTE = import.meta.env.VITE_API_URL_LOGIN_TESTE?.replace(/\/$/, '');
     const loginWindow = window.open('', '_blank', 'width=500,height=800');
 
     try {
@@ -79,15 +79,26 @@ export function LoginButton({ onLoginSuccess }: LoginButtonProps) {
         setStatus('processing');
         setMessage('Complete o login na janela que abriu...');
 
-        if (loginWindow) {
-          loginWindow.location.href =
-            `${API_URL_LOGIN}/vnc-assets/vnc.html?autoconnect=true&quality=2&compression=9&path=/vnc-ws?token=${result.vncToken}`;
+        let loginUrl = API_URL_LOGIN;
+
+        if (API_URL_LOGIN) {
+          console.log('🔍 Verificando servidor principal...');
+          const health = await api.healthCheck();
+
+          if (health) {
+            console.log('✅ Servidor principal está online.')
+          } else {
+            console.warn('⚠️ Servidor principal indisponível. Usando servidor de teste.');
+            loginUrl = VITE_API_URL_LOGIN_TESTE;
+          }
         }
 
+        if (!loginUrl) throw new Error('Nenhuma URL de servidor foi configurada.');
+        if (loginWindow) { loginWindow.location.href = `${loginUrl}/vnc-assets/vnc.html?autoconnect=true&quality=2&compression=9&path=/vnc-ws?token=${result.vncToken}`; }
+
         aguardarLoginConcluir(loginWindow);
-      } else {
-        throw new Error(result.error || 'Login não retornou token');
-      }
+      } else { throw new Error(result.error || 'Login não retornou token'); }
+
     } catch (err: any) {
       console.error('❌ Erro:', err);
       setStatus('error');
