@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
-import { 
-  Download, 
-  CheckCircle, 
-  AlertCircle, 
-  XCircle, 
+import {
+  Download,
+  CheckCircle,
+  AlertCircle,
+  XCircle,
   RefreshCw,
   Minimize2,
   Maximize2
@@ -13,14 +13,24 @@ import { api } from '@/services/api';
 
 interface ExtracaoButtonProps {
   onExtracaoComplete?: (data: any, extractionId: string) => void;
+  externalExtractionId?: string | null;   // <- novo
 }
 
-export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
+export function ExtracaoButton({ onExtracaoComplete, externalExtractionId }: ExtracaoButtonProps) {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<'idle' | 'processing' | 'completed' | 'failed' | 'cancelled'>('idle');
   const [message, setMessage] = useState('');
   const [extractionId, setExtractionId] = useState<string | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
+
+  useEffect(() => {
+    if (externalExtractionId && externalExtractionId !== extractionId) {
+      setExtractionId(externalExtractionId);
+      setStatus('processing');
+      setMessage('Extraindo dados do SEDUR...');
+      setIsMinimized(false);
+    }
+  }, [externalExtractionId]);
 
   // ✅ Verificar se há extração em andamento ao montar o componente
   useEffect(() => {
@@ -49,7 +59,7 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
         }
       }
     };
-    
+
     checkActiveExtraction();
   }, [onExtracaoComplete]);
 
@@ -63,13 +73,13 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
     const checkStatus = async () => {
       try {
         const result = await api.statusExtracao(extractionId);
-        
+
         if (!isMounted) return;
 
         if (result.status === 'completed') {
           setStatus('completed');
           setMessage('Extração concluída com sucesso!');
-          
+
           const dados = await api.ultimaExtracao();
           if (dados?.data && onExtracaoComplete) {
             onExtracaoComplete(dados.data, extractionId);
@@ -80,7 +90,7 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
           }, 5000);
           return;
         }
-        
+
         if (result.status === 'failed') {
           setStatus('failed');
           setMessage(result.message || 'Erro na extração');
@@ -112,7 +122,7 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
     setStatus('processing');
     setMessage('Iniciando extração...');
     setIsMinimized(false);
-    
+
     try {
       const response = await api.iniciarExtracao(true);
       setExtractionId(response.extractionId);
@@ -139,11 +149,11 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
 
   // Determina o texto e ícone do botão principal
   const hasActiveExtraction = status === 'processing';
-  const buttonText = hasActiveExtraction ? 'Ver extração' : 
-                     status === 'completed' ? 'Extraído!' : 
-                     status === 'failed' ? 'Erro' :
-                     status === 'cancelled' ? 'Cancelado' :
-                     'Extrair dados';
+  const buttonText = hasActiveExtraction ? 'Ver extração' :
+    status === 'completed' ? 'Extraído!' :
+      status === 'failed' ? 'Erro' :
+        status === 'cancelled' ? 'Cancelado' :
+          'Extrair dados';
 
   const buttonIcon = hasActiveExtraction ? (
     <RefreshCw className="w-4 h-4 animate-spin" />
@@ -158,10 +168,10 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
   const buttonColor = hasActiveExtraction
     ? 'bg-blue-600 hover:bg-blue-700'
     : status === 'completed'
-    ? 'bg-green-600 hover:bg-green-700'
-    : status === 'failed' || status === 'cancelled'
-    ? 'bg-red-600 hover:bg-red-700'
-    : 'bg-green-600 hover:bg-green-700';
+      ? 'bg-green-600 hover:bg-green-700'
+      : status === 'failed' || status === 'cancelled'
+        ? 'bg-red-600 hover:bg-red-700'
+        : 'bg-green-600 hover:bg-green-700';
 
   return (
     <div className="relative">
@@ -179,17 +189,15 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
       {(status === 'processing' || status === 'completed' || status === 'failed' || status === 'cancelled') && !isMinimized && (
         <div className="absolute top-full mt-2 right-0 w-80 bg-white rounded-xl shadow-2xl border overflow-hidden z-50">
           {/* Cabeçalho */}
-          <div className={`px-4 py-3 flex items-center justify-between ${
-            status === 'processing' ? 'bg-blue-50 border-b border-blue-100' :
+          <div className={`px-4 py-3 flex items-center justify-between ${status === 'processing' ? 'bg-blue-50 border-b border-blue-100' :
             status === 'completed' ? 'bg-green-50 border-b border-green-100' :
-            'bg-red-50 border-b border-red-100'
-          }`}>
+              'bg-red-50 border-b border-red-100'
+            }`}>
             <div className="flex items-center gap-2">
-              <div className={`p-1.5 rounded-lg ${
-                status === 'processing' ? 'bg-blue-100' :
+              <div className={`p-1.5 rounded-lg ${status === 'processing' ? 'bg-blue-100' :
                 status === 'completed' ? 'bg-green-100' :
-                'bg-red-100'
-              }`}>
+                  'bg-red-100'
+                }`}>
                 {status === 'processing' ? (
                   <RefreshCw className="w-4 h-4 text-blue-600 animate-spin" />
                 ) : status === 'completed' ? (
@@ -198,15 +206,14 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
                   <AlertCircle className="w-4 h-4 text-red-600" />
                 )}
               </div>
-              <span className={`font-medium text-sm ${
-                status === 'processing' ? 'text-blue-800' :
+              <span className={`font-medium text-sm ${status === 'processing' ? 'text-blue-800' :
                 status === 'completed' ? 'text-green-800' :
-                'text-red-800'
-              }`}>
+                  'text-red-800'
+                }`}>
                 {status === 'processing' ? 'Extraindo dados' :
-                 status === 'completed' ? 'Extração concluída' :
-                 status === 'cancelled' ? 'Extração cancelada' :
-                 'Erro na extração'}
+                  status === 'completed' ? 'Extração concluída' :
+                    status === 'cancelled' ? 'Extração cancelada' :
+                      'Erro na extração'}
               </span>
             </div>
             <div className="flex items-center gap-1">
@@ -269,7 +276,7 @@ export function ExtracaoButton({ onExtracaoComplete }: ExtracaoButtonProps) {
 
       {/* Indicador minimizado (apenas quando está minimizado e em processamento) */}
       {status === 'processing' && isMinimized && (
-        <div 
+        <div
           onClick={toggleMinimize}
           className="absolute top-full mt-2 right-0 cursor-pointer bg-blue-600 text-white px-3 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition-all z-50 flex items-center gap-2"
           title="Expandir extração"

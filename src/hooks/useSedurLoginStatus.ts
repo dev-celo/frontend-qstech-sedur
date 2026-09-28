@@ -3,10 +3,12 @@ import { api } from '../services/api.ts';
 import { dentroDoHorarioPermitido } from '../lib/horario.ts';
 import { jaFezLoginAlgumaVez } from '../lib/loginFlag';
 
-const POLL_INTERVAL_MS = 30 * 60 * 1000;
+import type { LoginStatus } from './useExtracaoWatcher.ts';
+
+const POLL_INTERVAL_MS = 60 * 60 * 1000;
 
 export function useSedurLoginStatus() {
-  return useQuery({
+  return useQuery<LoginStatus>({
     queryKey: ['sedur-login-status'],
     queryFn: () => api.verificarLoginSedur(),
 

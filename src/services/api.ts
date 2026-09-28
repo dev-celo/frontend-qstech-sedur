@@ -6,12 +6,11 @@ import { getAuthToken, logout } from '../lib/auth';
 // CONFIGURAÇÕES
 // ============================================
 const API_URL = (import.meta.env.VITE_API_URL || 'https://backend-qstech-sedur.onrender.com').replace(/\/$/, '');
-const API_URL_LOCAL = (import.meta.env.VITE_API_URL_LOCAL || 'http://localhost:3001').replace(/\/$/, '');
+const API_URL_LOCAL = (import.meta.env.VITE_API_URL_LOCAL);
+const API_URL_LOGIN = (import.meta.env.VITE_API_URL_LOGIN);
+
 const SESSION_STORAGE_KEY = 'sedur_sessao_info';
 const EXTRACTION_ID_KEY = 'extractionId';
-
-console.log('🌐 API Remota (consulta):', API_URL);
-console.log('🏠 API Local (extração):', API_URL_LOCAL);
 
 // ============================================
 // FUNÇÕES AUXILIARES
@@ -72,6 +71,7 @@ export interface SessaoInfo {
   expirada: boolean;
   criado_em?: string;
   expira_em?: string;
+  atualizado_em?: string;   // <- novo
 }
 
 // ============================================
@@ -158,8 +158,8 @@ class ApiClient {
   // ============================================
   // AUTENTICAÇÃO GOV.BR (LOCAL)
   // ============================================
-  async login(): Promise<{ success: boolean; message: string; session?: any }> {
-    const url = buildUrl(API_URL_LOCAL, 'api/login');
+  async login(): Promise<{ success: boolean; message?: string; vncToken?: string; error?: string; session?: any }> {
+    const url = buildUrl(API_URL_LOGIN, 'api/login');
     console.log('🔐 Tentando login em:', url);
 
     try {
@@ -184,15 +184,12 @@ class ApiClient {
       console.log('✅ Login resposta:', data);
       marcarLoginRealizado();
 
-      await this.atualizarStatusSessaoLocal();
-
-      return data;
+      return data;   // <- retorna o objeto inteiro do backend (success, vncToken), sem filtrar campos
     } catch (error: any) {
       console.error('❌ Erro no login:', error);
       throw error;
     }
   }
-
   // ============================================
   // LOGIN SEDUR STATUS (LOCAL)
   // ============================================
