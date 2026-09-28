@@ -1,24 +1,36 @@
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/services/api";
+import { dentroDoHorarioPermitido } from "@/lib/horario";
+import { jaFezLoginAlgumaVez } from "@/lib/loginFlag";
 
-interface LoginStatus {
+export interface LoginStatus {
   success: boolean;
   loginAtivo: boolean;
   extracaoExecutando: boolean;
 }
 
 interface UseExtracaoWatcherOptions {
-  intervaloMs?: number;
   onExtracaoConcluida: () => void;
   onLoginInativo?: () => void;
 }
 
+const POLL_INTERVAL_MS = 60 * 60 * 1000;
+
 export function useExtracaoWatcher({
-  intervaloMs = 15 * 60 * 1000,
   onExtracaoConcluida,
   onLoginInativo,
 }: UseExtracaoWatcherOptions) {
-  const [status, setStatus] = useState<LoginStatus | null>(null);
+  const { data: status } = useQuery<LoginStatus>({
+    queryKey: ['sedur-login-status'],
+    queryFn: () => api.verificarLoginSedur(),
+    enabled: jaFezLoginAlgumaVez(),
+    retry: false,
+    refetchInterval: () => dentroDoHorarioPermitido() ? POLL_INTERVAL_MS : false,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+  });
 
   const extracaoAnteriorRef = useRef<boolean>(false);
   const loginAnteriorRef = useRef<boolean>(true);
@@ -31,46 +43,21 @@ export function useExtracaoWatcher({
     onLoginInativoRef.current = onLoginInativo;
   }, [onExtracaoConcluida, onLoginInativo]);
 
-  const verificarStatus = useCallback(async () => {
-    try {
-      console.log("📡 [useExtracaoWatcher] consultando api.verificarLoginSedur()...");
-
-      const data: LoginStatus = await api.verificarLoginSedur();
-
-      console.log("📦 [useExtracaoWatcher] dados recebidos:", data);
-      setStatus(data);
-
-      console.log(
-        `🔎 [useExtracaoWatcher] extracaoExecutando: anterior=${extracaoAnteriorRef.current} atual=${data.extracaoExecutando}`
-      );
-
-      if (extracaoAnteriorRef.current && !data.extracaoExecutando) {
-        console.log("✅ [useExtracaoWatcher] Extração concluída detectada! Chamando onExtracaoConcluida()...");
-        onExtracaoConcluidaRef.current();
-      }
-      extracaoAnteriorRef.current = data.extracaoExecutando;
-
-      if (loginAnteriorRef.current && !data.loginAtivo) {
-        console.log("🔴 [useExtracaoWatcher] Login SEDUR ficou inativo (sessão expirada ou cron parado)");
-        onLoginInativoRef.current?.();
-      }
-      loginAnteriorRef.current = data.loginAtivo;
-    } catch (error) {
-      console.error("❌ [useExtracaoWatcher] Falha ao consultar api.verificarLoginSedur():", error);
-    }
-  }, []);
-
   useEffect(() => {
-    console.log(`🚀 [useExtracaoWatcher] montado. intervalo=${intervaloMs}ms`);
+    if (!status) return;
 
-    verificarStatus();
-    const interval = setInterval(verificarStatus, intervaloMs);
+    if (extracaoAnteriorRef.current && !status.extracaoExecutando) {
+      console.log("✅ [useExtracaoWatcher] Extração concluída detectada!");
+      onExtracaoConcluidaRef.current();
+    }
+    extracaoAnteriorRef.current = status.extracaoExecutando;
 
-    return () => {
-      console.log("🛑 [useExtracaoWatcher] desmontado, parando polling.");
-      clearInterval(interval);
-    };
-  }, [verificarStatus, intervaloMs]);
+    if (loginAnteriorRef.current && !status.loginAtivo) {
+      console.log("🔴 [useExtracaoWatcher] Login SEDUR ficou inativo");
+      onLoginInativoRef.current?.();
+    }
+    loginAnteriorRef.current = status.loginAtivo;
+  }, [status]);
 
-  return status;
+  return status ?? null;
 }
