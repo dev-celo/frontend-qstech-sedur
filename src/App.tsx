@@ -32,14 +32,14 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 // Guard para rotas de cliente
-// function PrivateRouteClient({ children }: { children: React.ReactNode }) {
-//   return useAuthToken() ? <>{children}</> : <Navigate to="/" replace />;
-// }
+function PrivateRouteClient({ children }: { children: React.ReactNode }) {
+  return useAuthToken() ? <>{children}</> : <Navigate to="/" replace />;
+}
 
 // Guard para rotas de procurador
-// function PrivateRouteProcurador({ children }: { children: React.ReactNode }) {
-//   return useAuthTokenProcurador() ? <>{children}</> : <Navigate to="/procurador/login" replace />;
-// }
+function PrivateRouteProcurador({ children }: { children: React.ReactNode }) {
+  return useAuthTokenProcurador() ? <>{children}</> : <Navigate to="/procurador/login" replace />;
+}
 
 
 function AppRoutes() {
@@ -109,9 +109,9 @@ function AppRoutes() {
       <Route
         path="/dashboard"
         element={
-          // <PrivateRouteClient>
-          <DashboardClient />
-          // </PrivateRouteClient>
+          <PrivateRouteClient>
+            <DashboardClient />
+          </PrivateRouteClient>
         }
       />
 
@@ -134,9 +134,9 @@ function AppRoutes() {
       <Route
         path="/procurador/dashboard"
         element={
-          // <PrivateRouteProcurador>
-          <DashboardProcurador />
-          // </PrivateRouteProcurador>
+          <PrivateRouteProcurador>
+            <DashboardProcurador />
+          </PrivateRouteProcurador>
         }
       />
 
