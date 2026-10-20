@@ -28,8 +28,8 @@ export function useExtracaoWatcher({
     retry: false,
     refetchInterval: () => dentroDoHorarioPermitido() ? POLL_INTERVAL_MS : false,
     refetchIntervalInBackground: true,
-    refetchOnWindowFocus: true,
-    staleTime: 0,
+    refetchOnWindowFocus: false,
+    staleTime: POLL_INTERVAL_MS,
   });
 
   const extracaoAnteriorRef = useRef<boolean>(false);
